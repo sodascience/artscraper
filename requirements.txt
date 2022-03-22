@@ -1,8 +1,4 @@
 beautifulsoup4
-pandas
 numpy
 selenium
 requests
-openpyxl
-sklearn
-matplotlib
