@@ -1,27 +1,66 @@
 # ArtScraper
 
-## Install
+ArtScraper is a tool to download images and metadata for artworks available on WikiArt and GoogleArt. 
 
-The ArtScraper package can be installed with pip:
+
+## Installation and setup
+
+The ArtScraper package can be installed with pip, which automatically installs the python dependencies:
 
 `pip install .`
 
-Then install the selenium driver. This is platform dependent, but the one used for this project is `geckodriver`, which is linked to Firefox. Make sure that you have a recent version of geckodriver, because selenium uses features that were only recently introduced in geckodriver.
 
-## Fetch data
+### WikiArt
 
-To fetch data, put the file `deviant.xlsx` in the directory `data/raw`, and run `get_wiki_data.py` and `get_google_data.py`. You might need to rerun them a few times. I don't know exactly why, but at some point google seems to return white images. It might be because of screensavers? In any case, I generally run the following command to remove the image directories with white images:
+To download data from WikiArt, it is necessary to obtain [API](https://www.wikiart.org/en/App/GetApi) keys. After obtaining them, you can put them separated and ended with a new line in the working directory. Alternatively, when ArtScraper doesn't detect the file, it will ask for the keys.
+
+### GoogleArt
+
+For the GoogleArt scraper it is necessary to install a non-python dependency, which is the selenium driver. This is platform dependent, but the one used for this project is `geckodriver`, which is linked to Firefox. Make sure that you have a recent version of geckodriver, because selenium uses features that were only recently introduced in geckodriver. Naturally, Firefox itself also needs to be installed. We have only tested the scraping on Linux/Firefox and OS X/Firefox.
+
+
+## Download images and metadata (interactive)
+
+An example of fetching data is shown in an [examples](examples/interactive.ipynb) notebook. Assuming the WikiArtScraper is used, we can download the data from a link with:
+
+```python
+
+scraper = WikiArtScraper()
+
+# Load the URL into the scraper.
+scraper.load_link("some URL")
+
+# Get the metadata
+metadata = scraper.get_metadata()
+
+# Save the image to some local file
+scraper.save_image("wiki.jpg")
+
+# Release resources
+scraper.close()
+```
+
+We can see that every time we want to download either images or metadata, we first load the URL into the scraper. For the GoogleArt implementation, releasing the resources with `scraper.close` will ensure that the browser is closed. The scraper should not be used after that.
+
+## Download images and metadata (automatic)
+
+For many use cases it might be useful to download a series of links and store them in a consistent way.
+
+```python
+
+with GoogleArtScraper("data/output/googlearts") as scraper:
+	for url in some_links:
+		scraper.load_link(url)
+		scraper.save_metadata()
+		scraper.save_image()
+```
+
+This will store both the image itself and the metadata in separate folders. If you use ArtScraper in this way, it will skip images/metadata that is already present. Remove the directory to force it to redownload it.
+
+## Known issues
+
+Sometimes the `GoogleArtScraper` returns white images (tested on OS X), which is most likely due to the screensaver kicking in. Apart from disabling the screensaver, the following shell command might be useful to remove most of the white images (if the data is in `data/output/google_arts`: 
 
 `sh for F in $(find data/output/google_arts/ -iname painting.png -size -55k); do rm -r $(dirname $F); done`
 
-Obviously be careful with bash scripts like these and makes sure you are in the right directory.
-
-Reruns will skip existing data (but the lastly made directory for the google data should be removed). The data will be under `data/output`: metadata for the WikiArts dataset and metadata + pictures for the google data.
-
-## Clean data
-
-Run the python script `clean_google_meta.py` after fetching the data. It removes and renames/merges a lot of columns from the initial meta data, making it more easy to work with, while not being as complete.
-
-## Explore the metadata
-
-The notebook `GoogleArts.ipynb` explores the meta data by using TF-IDF and applying logistic regression on the results. The coefficients are found to indicate which words are positively or negatively predicting the deviance of an art work according to the models.
+Be careful with bash scripts like these and makes sure you are in the right directory.

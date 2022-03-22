@@ -32,7 +32,8 @@ class BaseArtScraper(ABC):
     def convert_img_fp(self, img_fp=None, suffix=".png"):
         if img_fp is None:
             if self.output_dir is None:
-                raise ValueError("Trying to save file with no path or output dir.")
+                raise ValueError("Trying to save file with no path or output "
+                                 "dir.")
             img_fp = Path(self.paint_dir, "painting.png")
         elif Path(img_fp).suffix != suffix:
             print(f"Warning: changing file extensions: "
