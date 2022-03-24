@@ -103,7 +103,7 @@ class GoogleArtScraper(BaseArtScraper):
         if link is not None:
             self.load_link(link)
 
-        img_fp = self.convert_img_fp(img_fp, suffix=".png")
+        img_fp = self._convert_img_fp(img_fp, suffix=".png")
 
         if self.skip_existing and img_fp.is_file():
             return

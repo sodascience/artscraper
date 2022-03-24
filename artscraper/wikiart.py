@@ -182,7 +182,7 @@ class WikiArtScraper(BaseArtScraper):
         img_url = metadata["image"]
         path = urlparse(img_url).path
         suffix = Path(path).suffix
-        img_fp = self.convert_img_fp(img_fp, suffix)
+        img_fp = self._convert_img_fp(img_fp, suffix)
 
         if self.skip_existing and img_fp.is_file():
             return
