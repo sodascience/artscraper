@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 setup(
     name='artscraper',
     version='0.1.0',
-    author='ArtScraper Development Team',
+    author='ODISSEI Social Data Science Team',
     description='Package for scraping artworks from WikiArt and GoogleArt',
     long_description='Package for scraping artworks from WikiArt and GoogleArt',
     packages=find_packages(exclude=['data', 'docs', 'tests', 'examples']),
