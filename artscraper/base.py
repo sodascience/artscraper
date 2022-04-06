@@ -38,7 +38,7 @@ class BaseArtScraper(ABC):
 
     @abstractmethod
     def _get_metadata(self):
-        pass
+        raise NotImplementedError
 
     @property
     def meta_fp(self):
@@ -137,7 +137,7 @@ class BaseArtScraper(ABC):
             Optionally the url to the artwork can be supplied, which will be
             loaded instead.
         """
-        pass
+        raise NotImplementedError()
 
     def close(self):
         """Remove any resources that are being used.

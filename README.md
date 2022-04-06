@@ -12,11 +12,20 @@ The ArtScraper package can be installed with pip, which automatically installs t
 
 ### WikiArt
 
-To download data from WikiArt, it is necessary to obtain [API](https://www.wikiart.org/en/App/GetApi) keys. After obtaining them, you can put them separated and ended with a new line in the working directory. Alternatively, when ArtScraper doesn't detect the file, it will ask for the keys.
+To download data from WikiArt, it is necessary to obtain [API](https://www.wikiart.org/en/App/GetApi) keys. After obtaining them, you can put them in a file called `.wiki_api` in the working directory for your script. The format is: the API access key, a new line, the API secret key, and a new line, e.g.:
+
+```
+7e57a60844
+3defc62d8f
+```
+
+Alternatively, when ArtScraper doesn't detect the file `.wiki_api`, it will ask for the API keys.
 
 ### GoogleArt
 
 For the GoogleArt scraper it is necessary to install a non-python dependency, which is the selenium driver. This is platform dependent, but the one used for this project is `geckodriver`, which is linked to Firefox. Make sure that you have a recent version of geckodriver, because selenium uses features that were only recently introduced in geckodriver. Naturally, Firefox itself also needs to be installed. We have only tested the scraping on Linux/Firefox and OS X/Firefox.
+
+On Linux, geckodriver is most likely available through the package manager for your distribution. On OS X, it is the easiest to install it through either [brew](https://formulae.brew.sh/formula/geckodriver#default) or [macports](https://ports.macports.org/port/geckodriver/). Depending on your settings, you might need to add the directory where the geckodriver resides to the PATH variable.
 
 
 ## Download images and metadata (interactive)
