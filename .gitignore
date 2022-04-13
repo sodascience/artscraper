@@ -1,3 +1,10 @@
+# Custom stuff
+.wiki_session
+.wiki_api
+data/
+.pydevproject
+.project
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
