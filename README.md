@@ -86,6 +86,8 @@ them in a consistent way.
 
 ```python
 
+from artscraper import GoogleArtScraper
+
 with GoogleArtScraper("data/output/googlearts") as scraper:
     for url in some_links:
         scraper.load_link(url)
