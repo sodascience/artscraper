@@ -57,6 +57,8 @@ is used, we can download the data from a link with:
 
 ```python
 
+from artscraper import WikiArtScraper
+
 scraper = WikiArtScraper()
 
 # Load the URL into the scraper.
@@ -104,7 +106,6 @@ white images (if the data is in `data/output/google_arts`:
 
 ```
 sh for F in $(find data/output/google_arts/ -iname painting.png -size -55k); do rm -r $(dirname $F); done
-
 ```
 
 Be careful with bash scripts like these and makes sure you are in the right
