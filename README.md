@@ -73,3 +73,14 @@ Sometimes the `GoogleArtScraper` returns white images (tested on OS X), which is
 `sh for F in $(find data/output/google_arts/ -iname painting.png -size -55k); do rm -r $(dirname $F); done`
 
 Be careful with bash scripts like these and makes sure you are in the right directory.
+
+## Contact
+
+This project is developed and maintained by the [ODISSEI Social Data
+Science (SoDa)](https://odissei-data.nl/nl/soda/) team.
+
+<img src="img/soda_logo.png" alt="SoDa logo" width="250px"/>
+
+Do you have questions, suggestions, or remarks? File an issue in the
+issue tracker or feel free to contact the team via https://odissei-data.nl/en/using-soda/. 
+
