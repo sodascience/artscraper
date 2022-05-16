@@ -7,7 +7,9 @@ ArtScraper is a tool to download images and metadata for artworks available on W
 
 The ArtScraper package can be installed with pip, which automatically installs the python dependencies:
 
-`pip install .`
+```
+pip install .
+```
 
 
 ### WikiArt
