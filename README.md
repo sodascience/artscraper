@@ -79,7 +79,7 @@ Be careful with bash scripts like these and makes sure you are in the right dire
 This project is developed and maintained by the [ODISSEI Social Data
 Science (SoDa)](https://odissei-data.nl/nl/soda/) team.
 
-<img src="img/soda_logo.png" alt="SoDa logo" width="250px"/>
+<img src="soda_logo.png" alt="SoDa logo" width="250px"/>
 
 Do you have questions, suggestions, or remarks? File an issue in the
 issue tracker or feel free to contact the team via https://odissei-data.nl/en/using-soda/. 
