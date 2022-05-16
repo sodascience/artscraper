@@ -1,11 +1,11 @@
 from pathlib import Path
+from random import random
 from time import sleep
 from urllib.parse import urlparse
 import time
 import json
 
 from bs4 import BeautifulSoup
-import numpy as np
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
@@ -129,4 +129,4 @@ def random_wait_time(min_wait=5, max_wait=None):
     def inv_cdf(x):
         return (b**-beta - beta*x/a)**(-1/beta)
 
-    return inv_cdf(np.random.rand())
+    return inv_cdf(random())
