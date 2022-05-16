@@ -1,3 +1,9 @@
+"""Base class for the ArtScraper package.
+
+Any newly defined scrapers should derive themselves from
+BaseArtScraper.
+"""
+
 import json
 from abc import ABC
 from abc import abstractmethod
@@ -5,15 +11,17 @@ from pathlib import Path
 
 
 class BaseArtScraper(ABC):
-    """Base class for scraping artworks from urls.
+    """Base class for ArtScrapers.
 
-    Arguments
-    ---------
-    output_dir: Path/string
-        If set, all the metadata/images are stored in directories, with
-        output_dir as the base directory.
-    skip_existing: bool
-        If set, skip metadata/images that have already been downloaded.
+    Currently two ArtScrapers are implemented (WikiScraper and GoogleScraper)
+    which derive from this class.
+
+    Parameters
+    ----------
+    output_dir: Path or str, optional
+        Output directory for any scraped images.
+    skip_existing: bool, default=True
+        If true, skip downloading any existing images.
     min_wait: float
         To avoid going over rate limits, this can be set a floating point
         number, which sets the minimum time between requests.
@@ -35,7 +43,19 @@ class BaseArtScraper(ABC):
         pass
 
     def load_link(self, link):
+        """Load an url / webpage.
+
+        Parameters
+        ----------
+        link: str
+            URL to open for subsequent actions.
+        """
         self.link = link
+
+    @abstractmethod
+    @property
+    def paint_dir(self):
+        """pathlib.Path: Directory to store the current image/painting."""
 
     @abstractmethod
     def _get_metadata(self):
@@ -43,6 +63,7 @@ class BaseArtScraper(ABC):
 
     @property
     def meta_fp(self):
+        """pathlib.Path: Path to metadata file for current artwork."""
         return Path(self.paint_dir, "metadata.json")
 
     def _convert_img_fp(self, img_fp=None, suffix=".png"):
@@ -120,7 +141,7 @@ class BaseArtScraper(ABC):
             return
         metadata = self.get_metadata()
         self.paint_dir.mkdir(exist_ok=True)
-        with open(meta_fp, "w") as f:
+        with open(meta_fp, "w", encoding="utf-8") as f:  # pylint: disable=invalid-name
             json.dump(metadata, f)
 
     @abstractmethod
@@ -145,4 +166,3 @@ class BaseArtScraper(ABC):
 
         This is non-reversible.
         """
-        pass

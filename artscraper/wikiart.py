@@ -1,3 +1,5 @@
+"""Module for the WikiArt scraper class."""
+
 import json
 import re
 import time
@@ -19,11 +21,11 @@ class WikiArtScraper(BaseArtScraper):
 
         # Try to use the previous session, can be deleted if expired.
         try:
-            with open(".wiki_session", "r") as f:
+            with open(".wiki_session", "r", encoding="utf-8") as f:
                 self.session_key = f.read()
         except FileNotFoundError:
             self._new_session()
-            with open(".wiki_session", "w") as f:
+            with open(".wiki_session", "w", encoding="utf-8") as f:
                 f.write(self.session_key)
         self.last_request = None
 
@@ -39,7 +41,7 @@ class WikiArtScraper(BaseArtScraper):
         keys.
         """
         try:
-            with open(".wiki_api") as f:
+            with open(".wiki_api", "r", encoding="utf-8") as f:
                 self.API_access_key, self.API_secret_key, _ = f.read().split(
                     "\n")
             return
@@ -51,7 +53,7 @@ class WikiArtScraper(BaseArtScraper):
             self.API_secret_key = input("WikiArt Secret Key? ")
 
             str_out = "\n".join([self.API_access_key, self.API_secret_key, ""])
-            with open(".wiki_api", "w") as f:
+            with open(".wiki_api", "w", encoding="utf-8") as f:
                 f.write(str_out)
 
     def _new_session(self):
@@ -76,12 +78,9 @@ class WikiArtScraper(BaseArtScraper):
         self.last_request = time.time()
         return json.loads(response.text)
 
-    def _link_dirs(self, link):
-        return urlparse(link).path.split("/")[-2:]
-
     def _find_by_artist_painting(self):
         """Find the painting by searching for artist + painting name"""
-        link_dirs = self._link_dirs(self.link)
+        link_dirs = _link_dirs(self.link)
         terms = " ".join(link_dirs).replace("-", " ")
         try:
             int(terms[-4:])
@@ -100,22 +99,21 @@ class WikiArtScraper(BaseArtScraper):
                 pass
 
         raise ValueError("Cannot find painting by artist + painting")
-        assert False
 
     def _find_by_scrape(self):
         """This is a nasty bit of regex to get the painting ID"""
-        link_dirs = self._link_dirs(self.link)
+        link_dirs = _link_dirs(self.link)
         response = requests.get(self.link)
         # We try two different regexes to get the painting ID.
-        p = re.compile(r"paintingId = '(.+?')")
+        p_rgx = re.compile(r"paintingId = '(.+?')")
         try:
-            paint_id = p.search(response.text).group(0)[14:-1]
+            paint_id = p_rgx.search(response.text).group(0)[14:-1]
         except AttributeError:
             try:
-                p = re.compile(r'data-painting-id="(.+?)"')
-                paint_id = p.search(response.text).group(0)[18:-1]
-            except AttributeError:
-                raise ValueError("Cannot find painting by scrape.")
+                p_rgx = re.compile(r'data-painting-id="(.+?)"')
+                paint_id = p_rgx.search(response.text).group(0)[18:-1]
+            except AttributeError as error:
+                raise ValueError("Cannot find painting by scrape.") from error
         return self._check_metadata(paint_id, link_dirs)
 
     def _check_metadata(self, paint_meta, link_dirs):
@@ -140,7 +138,7 @@ class WikiArtScraper(BaseArtScraper):
         inaccessible.
         """
         url = "https://www.wikiart.org/en/api/2/PaintingSearch"
-        link_dirs = self._link_dirs(self.link)
+        link_dirs = _link_dirs(self.link)
         artist = link_dirs[0].replace("-", " ")
         has_more = True
         meta_data = []
@@ -157,7 +155,7 @@ class WikiArtScraper(BaseArtScraper):
         # Check each painting until we find the right one.
         for paint_meta in meta_data:
             try:
-                return self.check_metadata(paint_meta, link_dirs)
+                return self._check_metadata(paint_meta, link_dirs)
             except ValueError:
                 pass
         raise ValueError("Cannot find painting by artist.")
@@ -195,3 +193,7 @@ class WikiArtScraper(BaseArtScraper):
             self.paint_dir.mkdir(exist_ok=True)
         with open(img_fp, "wb") as f:
             f.write(img_data)
+
+
+def _link_dirs(link):
+    return urlparse(link).path.split("/")[-2:]
