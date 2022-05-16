@@ -1,16 +1,17 @@
 import json
-import time
 import re
+import time
 from pathlib import Path
+from urllib.parse import urlparse
 
 import requests
-from urllib.parse import urlparse
 
 from artscraper.base import BaseArtScraper
 
 
 class WikiArtScraper(BaseArtScraper):
     """Class to interact with the WikiArt API."""
+
     def __init__(self, output_dir=None, skip_existing=True, min_wait=0.3):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
 
@@ -39,8 +40,8 @@ class WikiArtScraper(BaseArtScraper):
         """
         try:
             with open(".wiki_api") as f:
-                self.API_access_key, self.API_secret_key, _ = f.read(
-                    ).split("\n")
+                self.API_access_key, self.API_secret_key, _ = f.read().split(
+                    "\n")
             return
         except FileNotFoundError:
             print("No API keys found in current directory.")
@@ -56,9 +57,11 @@ class WikiArtScraper(BaseArtScraper):
     def _new_session(self):
         """Create a new session and store the session key"""
         login_page = "https://www.wikiart.org/en/Api/2/login"
-        response = requests.get(login_page, params={
-            "accessCode": self.API_access_key,
-            "secretCode": self.API_secret_key})
+        response = requests.get(login_page,
+                                params={
+                                    "accessCode": self.API_access_key,
+                                    "secretCode": self.API_secret_key
+                                })
         self.session_key = json.loads(response.text)["SessionKey"]
         self.last_request = time.time()
 
@@ -68,7 +71,7 @@ class WikiArtScraper(BaseArtScraper):
         if self.last_request is not None:
             time_elapsed = time.time() - self.last_request
             if time_elapsed < self.min_wait:
-                time.sleep(self.min_wait-time_elapsed)
+                time.sleep(self.min_wait - time_elapsed)
         response = requests.get(url, params=params)
         self.last_request = time.time()
         return json.loads(response.text)
@@ -122,8 +125,8 @@ class WikiArtScraper(BaseArtScraper):
         else:
             paint_id = paint_meta["id"]
         paint_data = self.info_from_painting_id(paint_id)
-        if (paint_data["artistUrl"] == link_dirs[0] and
-                paint_data["url"] == link_dirs[1]):
+        if (paint_data["artistUrl"] == link_dirs[0]
+                and paint_data["url"] == link_dirs[1]):
             return paint_data
         raise ValueError("Painting is not the right one.")
 

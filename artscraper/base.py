@@ -1,10 +1,11 @@
-from abc import ABC, abstractmethod
-from pathlib import Path
 import json
+from abc import ABC
+from abc import abstractmethod
+from pathlib import Path
 
 
 class BaseArtScraper(ABC):
-    """Base class for scraping artworks from urls
+    """Base class for scraping artworks from urls.
 
     Arguments
     ---------
@@ -17,13 +18,13 @@ class BaseArtScraper(ABC):
         To avoid going over rate limits, this can be set a floating point
         number, which sets the minimum time between requests.
     """
+
     def __init__(self, output_dir=None, skip_existing=True, min_wait=None):
         self.skip_existing = skip_existing
         self.output_dir = output_dir
 
         # Cache of metadata, in case it is needed more than once/later.
-        self._meta_store = {"link": "",
-                            "data": {}}
+        self._meta_store = {"link": "", "data": {}}
         self.link = "None"
         self.min_wait = min_wait
 
@@ -45,7 +46,7 @@ class BaseArtScraper(ABC):
         return Path(self.paint_dir, "metadata.json")
 
     def _convert_img_fp(self, img_fp=None, suffix=".png"):
-        """Function to create a path from available information
+        """Function to create a path from available information.
 
         Also changes the suffix of the file if needed.
         """
@@ -57,13 +58,13 @@ class BaseArtScraper(ABC):
         elif Path(img_fp).suffix != suffix:
             print(f"Warning: changing file extensions: "
                   f"{Path(img_fp).suffix} -> {suffix}")
-            img_fp = Path(Path(img_fp).parent, Path(img_fp).stem+suffix)
+            img_fp = Path(Path(img_fp).parent, Path(img_fp).stem + suffix)
         else:
             img_fp = Path(img_fp)
         return img_fp
 
     def get_metadata(self, link=None, **kwargs):
-        """Obtain metadata from an url
+        """Obtain metadata from an url.
 
         Implementations of the base class should implement
         the _get_metadata method that is called from this method.
