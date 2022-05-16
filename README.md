@@ -1,6 +1,6 @@
 # ArtScraper
 
-ArtScraper is a tool to download images and metadata for artworks available on WikiArt and GoogleArt. 
+ArtScraper is a tool to download images and metadata for artworks available on WikiArt (www.wikiart.org/) and Google Arts & Culture (artsandculture.google.com/). 
 
 
 ## Installation and setup
@@ -21,7 +21,7 @@ To download data from WikiArt, it is necessary to obtain [API](https://www.wikia
 
 Alternatively, when ArtScraper doesn't detect the file `.wiki_api`, it will ask for the API keys.
 
-### GoogleArt
+### Google Arts & Culture
 
 For the GoogleArt scraper it is necessary to install a non-python dependency, which is the selenium driver. This is platform dependent, but the one used for this project is `geckodriver`, which is linked to Firefox. Make sure that you have a recent version of geckodriver, because selenium uses features that were only recently introduced in geckodriver. Naturally, Firefox itself also needs to be installed. We have only tested the scraping on Linux/Firefox and OS X/Firefox.
 
