@@ -13,7 +13,6 @@ setup(
     install_requires=[
         "requests",
         "selenium",
-        "beautifulsoup4",
-        "numpy",
+        "beautifulsoup4"
     ]
 )
