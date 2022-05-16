@@ -1,3 +1,5 @@
+"""File for packaging ArtScraper."""
+
 # based on https://github.com/pypa/sampleproject - MIT License
 
 from setuptools import find_packages
