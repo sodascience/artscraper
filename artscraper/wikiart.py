@@ -42,7 +42,7 @@ class WikiArtScraper(BaseArtScraper):
         """
         try:
             with open(".wiki_api", "r", encoding="utf-8") as f:
-                self.API_access_key, self.API_secret_key, _ = f.read().split(
+                self.API_access_key, self.API_secret_key, *_ = f.read().split(
                     "\n")
             return
         except FileNotFoundError:
