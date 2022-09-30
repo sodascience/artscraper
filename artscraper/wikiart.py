@@ -14,7 +14,7 @@ from artscraper.base import BaseArtScraper
 class WikiArtScraper(BaseArtScraper):
     """Class to interact with the WikiArt API."""
 
-    def __init__(self, output_dir=None, skip_existing=True, min_wait=0.3):
+    def __init__(self, output_dir=None, skip_existing=True, min_wait=0.3, timeout=150):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
 
         self._get_API_keys()
@@ -28,6 +28,7 @@ class WikiArtScraper(BaseArtScraper):
             with open(".wiki_session", "w", encoding="utf-8") as f:
                 f.write(self.session_key)
         self.last_request = None
+        self.timeout = timeout
 
     @property
     def paint_dir(self):
@@ -63,7 +64,8 @@ class WikiArtScraper(BaseArtScraper):
                                 params={
                                     "accessCode": self.API_access_key,
                                     "secretCode": self.API_secret_key
-                                })
+                                },
+                                timeout=self.timeout)
         self.session_key = json.loads(response.text)["SessionKey"]
         self.last_request = time.time()
 
@@ -74,7 +76,7 @@ class WikiArtScraper(BaseArtScraper):
             time_elapsed = time.time() - self.last_request
             if time_elapsed < self.min_wait:
                 time.sleep(self.min_wait - time_elapsed)
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params, timeout=self.timeout)
         self.last_request = time.time()
         return json.loads(response.text)
 
@@ -103,7 +105,7 @@ class WikiArtScraper(BaseArtScraper):
     def _find_by_scrape(self):
         """This is a nasty bit of regex to get the painting ID"""
         link_dirs = _link_dirs(self.link)
-        response = requests.get(self.link)
+        response = requests.get(self.link, timeout=self.timeout)
         # We try two different regexes to get the painting ID.
         p_rgx = re.compile(r"paintingId = '(.+?')")
         try:
@@ -187,7 +189,7 @@ class WikiArtScraper(BaseArtScraper):
 
         if self.skip_existing and img_fp.is_file():
             return
-        img_data = requests.get(img_url).content
+        img_data = requests.get(img_url, timeout=self.timeout).content
 
         if self.output_dir:
             self.paint_dir.mkdir(exist_ok=True)
