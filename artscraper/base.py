@@ -52,8 +52,8 @@ class BaseArtScraper(ABC):
         """
         self.link = link
 
-    @abstractmethod
     @property
+    @abstractmethod
     def paint_dir(self):
         """pathlib.Path: Directory to store the current image/painting."""
 
