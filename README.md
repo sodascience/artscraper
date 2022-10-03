@@ -17,7 +17,7 @@ pip install https://github.com/sodascience/artscraper.git
 
 ### WikiArt
 
-To download data from WikiArt, it is necessary to obtain
+To download data from WikiArt it is necessary to obtain
 [API](https://www.wikiart.org/en/App/GetApi) keys. After obtaining them, you
 can put them in a file called `.wiki_api` in the working directory for your
 script. The format is: the API access key, a new line, the API secret key, and
@@ -33,26 +33,30 @@ ask for the API keys.
 
 ### Google Arts & Culture
 
-For the GoogleArt scraper it is necessary to install a non-python dependency,
-which is the selenium driver. This is platform dependent, but the one used for
-this project is `geckodriver`, which is linked to Firefox. Make sure that you
-have a recent version of geckodriver, because selenium uses features that were
-only recently introduced in geckodriver. Naturally, Firefox itself also needs
-to be installed. We have only tested the scraping on Linux/Firefox and OS
-X/Firefox.
+To download data from GoogleArt it is necessary to install 
+[Firefox](https://www.mozilla.org/en-US/firefox/new/) and `geckodriver`. 
 
-On Linux, geckodriver is most likely available through the package manager for
-your distribution. On OS X, it is the easiest to install it through either
-[brew](https://formulae.brew.sh/formula/geckodriver#default) or
-[macports](https://ports.macports.org/port/geckodriver/). Depending on your
-settings, you might need to add the directory where the geckodriver resides to
-the PATH variable.
+There are two options to download the geckodriver.
+- Using a package manager (recommended on Linux/OS X): On Linux, geckodriver 
+is most likely available through the package manager for your distribution
+(e.g. on Ubuntu `sudo apt install firefox-geckodriver`. On OS X, it is the 
+easiest to install it through either [brew](https://formulae.brew.sh/formula/geckodriver#default) or [macports](https://ports.macports.org/port/geckodriver/) (e.g. `brew install geckodriver`). Depending on your settings, you might need to add the directory where the geckodriver resides to the PATH variable. 
+- Downloading it [from here](https://github.com/mozilla/geckodriver/releases) and making it available to the code. For example in Windows you can download the file `geckodriver-v0.31.0-win64.zip`, place the driver in the directory of your code, and specify the path when you initialize the GoogleArtScraper. For example:
+```python
+with GoogleArtScraper(geckodriver_path="./geckodriver.exe") as scraper:
+    ...
+```
+
+Make sure that you have a recent version of geckodriver, because selenium (a non-python dependency used in the GoogleArt scraper) uses features that were only recently introduced 
+in geckodriver. We have only tested the scraping on Linux/Firefox and OSX/Firefox.
 
 
 ## Download images and metadata (interactive)
 
 An example of fetching data is shown in an
-[examples](examples/interactive.ipynb) notebook. Assuming the WikiArtScraper
+[example](examples/example_artscraper.ipynb) notebook. 
+
+Assuming the WikiArtScraper
 is used, we can download the data from a link with:
 
 ```python
@@ -80,6 +84,9 @@ releasing the resources with `scraper.close` will ensure that the browser is
 closed. The scraper should not be used after that.
 
 ## Download images and metadata (automatic)
+
+An example of fetching data is shown in an
+[example](examples/example_artscraper.ipynb) notebook.
 
 For many use cases it might be useful to download a series of links and store
 them in a consistent way.

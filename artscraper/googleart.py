@@ -30,9 +30,9 @@ class GoogleArtScraper(BaseArtScraper):
         is randomly drawn from a polynomial distribution.
     """
 
-    def __init__(self, output_dir=None, skip_existing=True, min_wait=5):
+    def __init__(self, output_dir=None, skip_existing=True, min_wait=5, geckodriver_path="geckodriver"):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
-        self.driver = webdriver.Firefox()
+        self.driver = webdriver.Firefox(executable_path=geckodriver_path)
         self.last_request = time.time() - 100
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):
