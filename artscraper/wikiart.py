@@ -16,9 +16,7 @@ class WikiArtScraper(BaseArtScraper):
 
     def __init__(self, output_dir=None, skip_existing=True, min_wait=0.3, timeout=150):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
-        
         self.timeout = timeout
-        
         self._get_API_keys()
     
         # Try to use the previous session, can be deleted if expired.
@@ -31,7 +29,6 @@ class WikiArtScraper(BaseArtScraper):
                 f.write(self.session_key)
         self.last_request = None
         
-
     @property
     def paint_dir(self):
         metadata = self.get_metadata()
