@@ -7,7 +7,7 @@ from setuptools import setup
 
 setup(
     name='artscraper',
-    version='0.1.0',
+    version='0.1.1',
     author='ODISSEI Social Data Science Team',
     description='Package for scraping artworks from WikiArt and GoogleArt',
     long_description=readme(),
