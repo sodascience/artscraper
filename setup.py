@@ -12,9 +12,6 @@ setup(
     author='ODISSEI Social Data Science Team',
     description='Package for scraping artworks from WikiArt and GoogleArt',
     long_description='See https://github.com/sodascience/artscraper for examples and usage',
-    keywords='artscraper wikiart artsandculture',
-    license='MIT',
-    url='https://github.com/sodascience/artscraper',
     packages=find_packages(exclude=['data', 'docs', 'tests', 'examples']),
     python_requires='~=3.6',
     install_requires=[
