@@ -5,6 +5,10 @@
 from setuptools import find_packages
 from setuptools import setup
 
+def readme():
+    with open('README.rst') as f:
+        return f.read()
+
 setup(
     name='artscraper',
     version='0.1.1',
