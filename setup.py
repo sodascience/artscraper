@@ -5,12 +5,16 @@
 from setuptools import find_packages
 from setuptools import setup
 
+
+with open('README.md') as f:
+    readme = f.read()
+    
 setup(
     name='artscraper',
     version='0.1.1',
     author='ODISSEI Social Data Science Team',
     description='Package for scraping artworks from WikiArt and GoogleArt',
-    long_description=open("README.md", 'r').read(),
+    long_description=readme,
     long_description_content_type='text/markdown',
     keywords='artscraper wikiart artsandculture',
     license='MIT',
