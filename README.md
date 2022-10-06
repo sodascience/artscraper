@@ -120,6 +120,14 @@ sh for F in $(find data/output/google_arts/ -iname painting.png -size -55k); do 
 Be careful with bash scripts like these and makes sure you are in the right
 directory.
 
+## License and citation
+
+The package `artscraper` is published under an MIT license. When using `artscraper` for academic work, please cite:
+
+    Schram, Raoul, Garcia-Bernardo, Javier, van Kesteren, Erik-Jan, de Bruin, Jonathan, & Stamkou, Eftychia. (2022). 
+    ArtScraper: A Python library to scrape online artworks (0.1.1). Zenodo. https://doi.org/10.5281/zenodo.7129975
+
+
 ## Contact
 
 This project is developed and maintained by the [ODISSEI Social Data
