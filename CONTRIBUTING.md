@@ -8,7 +8,7 @@ Thank you for considering contributing to artscraper. Below we provide some guid
 
 ## Reporting a bug
 
-If you found a bug in osmenrich, we would love to know more about it. Please let us know about this problem by [opening an issue](https://github.com/sodascience/artscraper/issues/new/choose).
+If you found a bug in artscraper, we would love to know more about it. Please let us know about this problem by [opening an issue](https://github.com/sodascience/artscraper/issues/new/choose).
 
 The most important thing to include in your new issue is a minimal reproducible example that we can use to verify your problem and understand its root cause.
 
@@ -20,7 +20,7 @@ We are very interested in hearing your suggestions in regards to the development
 
 ## Conributing code
 
-To contribute code to osmenrich, you can follow these three steps:
+To contribute code to artscraper, you can follow these three steps:
 
 1. Create a branch and make your changes
 2. Push the branch to GitHub and issue a [Pull Request (PR)](https://github.com/sodascience/artscraper/compare)
