@@ -120,6 +120,16 @@ sh for F in $(find data/output/google_arts/ -iname painting.png -size -55k); do 
 Be careful with bash scripts like these and makes sure you are in the right
 directory.
 
+## Contributing
+
+Contributions are what make the open source community an amazing place
+to learn, inspire, and create. Any contributions you make are **greatly
+appreciated**.
+
+Please refer to the
+[CONTRIBUTING](https://github.com/sodascience/artscraper/blob/main/CONTRIBUTING.md)
+file for more information on issues and pull requests.
+
 ## License and citation
 
 The package `artscraper` is published under an MIT license. When using `artscraper` for academic work, please cite:
