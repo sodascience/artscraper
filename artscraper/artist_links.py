@@ -4,7 +4,7 @@ Get artist links from Google Arts & Culture webpage
 
 import time
 from selenium import webdriver
-from artscraper import random_wait_time
+from artscraper.googleart import random_wait_time
 
 
 def get_artist_links(webpage):
