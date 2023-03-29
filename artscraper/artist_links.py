@@ -1,8 +1,9 @@
 from selenium import webdriver
-from googleart import *
+from artscraper import random_wait_time
 import time
 
-def get_artist_links(webpage, output_file):
+
+def get_artist_links(webpage):
     
     # Launch Firefox browser
     driver = webdriver.Firefox()
@@ -10,7 +11,6 @@ def get_artist_links(webpage, output_file):
     # Get Google Arts & Culture webpage listing all artists
     driver.get(webpage)
 
-    
     # Get scroll height after first time page load
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
@@ -25,14 +25,13 @@ def get_artist_links(webpage, output_file):
         last_height = new_height
 
     # Find xpaths containing artist links
-    elements = driver.find_elements('xpath','//*[contains(@href,"categoryId=artist")]')
+    elements = driver.find_elements('xpath', '//*[contains(@href,"categoryId=artist")]')
     
-    # Open output file
-    f = open(output_file, 'w')
+    # List to store artist links
+    list_links = []
     # Go through each xpath containing an artist link
     for element in elements:
-        # Extract link and write to output file
-        f.write(element.get_attribute('href'))
-        f.write('\n')
-    # Close output file
-    f.close()
+        # Append to list
+        list_links.append(element.get_attribute('href'))
+
+    return list_links
