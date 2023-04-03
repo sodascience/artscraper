@@ -23,8 +23,7 @@ def get_artist_works(artist_link, min_wait_time):
 
     # Launch Firefox browser
     driver = webdriver.Firefox()
-    # Attempt to avoid overlapping element obscuring right arrow button
-    #driver.maximize_window()
+
     # Get Google Arts & Culture webpage for the artist
     driver.get(artist_link)
 
@@ -41,7 +40,9 @@ def get_artist_works(artist_link, min_wait_time):
     # Total number of artworks for this artist
     num_items = int(num_items_text.split(' ')[0])
 
-    while True:
+    #Initialize list of elements with links to artworks
+    elements = []
+    while len(elements) < num_items:
         # Find right arrow button
         right_arrow_element = parent_element.find_element('xpath', \
             './/*[contains(@data-gaaction,"rightArrow")]')
@@ -52,17 +53,8 @@ def get_artist_works(artist_link, min_wait_time):
         # List of all elements with links to artworks, at this stage
         elements = right_arrow_element.find_elements('xpath', \
             '//*[contains(@href,"/asset/")]')
-        # Continue looping if list still has less than total number of artworks
-        if(len(elements)) >= num_items:
-            break
-       # else:
-          #  break
 
-    # List to store links to the artist's works
-    list_links = []
-    # Go through each xpath containing a link to an artwork
-    for element in elements:
-        # Append to list
-        list_links.append(element.get_attribute('href'))
+    # Get the links from the XPath elements
+    list_links = [element.get_attribute('href') for element in elements]
 
     return list_links
