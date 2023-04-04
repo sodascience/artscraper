@@ -1,6 +1,6 @@
 '''
 get_artist_works: Get artist links from Google Arts & Culture webpage
-get _artist_description: Get description of the artist, from Wikipedia
+get_artist_description: Get description of the artist, from Wikipedia
 '''
 
 import time
