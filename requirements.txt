@@ -2,4 +2,4 @@ beautifulsoup4
 numpy
 selenium
 requests
-wikipediaapi
+wikipedia-api
