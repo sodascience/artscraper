@@ -20,6 +20,7 @@ setup(
     install_requires=[
         "requests",
         "selenium",
-        "beautifulsoup4"
+        "beautifulsoup4",
+        "wikipediaapi"
     ]
 )
