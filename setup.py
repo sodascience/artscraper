@@ -21,6 +21,6 @@ setup(
         "requests",
         "selenium",
         "beautifulsoup4",
-        "wikipediaapi"
+        "wikipedia-api"
     ]
 )
