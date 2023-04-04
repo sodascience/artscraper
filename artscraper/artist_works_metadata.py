@@ -70,7 +70,7 @@ def get_artist_description(artist_link):
 
     Returns
     -------
-    description : Description of artist (lead section of Wikipedia article)
+    description : String containing description of artist (lead section of Wikipedia article)
 
     '''
 
