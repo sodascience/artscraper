@@ -4,6 +4,7 @@ get_artist_description: Get description of the artist, from Wikipedia
 '''
 
 import time
+import requests
 from selenium import webdriver
 import wikipediaapi
 from artscraper.googleart import random_wait_time
@@ -95,3 +96,179 @@ def get_artist_description(artist_link):
     description = page.summary
 
     return description
+
+def get_artist_metadata(artist_link):
+    
+    # Get Wikidata ID of artist
+    artist_id = get_artist_wikidata_id(artist_link)
+    
+    # Wikidata database to query
+    url = 'https://query.wikidata.org/sparql'
+    
+    # SPARQL query
+    query = (
+        'SELECT ?familyName ?familyNameLabel ',
+        '?givenName ?givenNameLabel ',
+        '?dateOfBirth ?dateOfBirthLabel ',
+        '?placeOfBirth ?placeOfBirthLabel ',
+        '?coordinatesBirth ?coordinatesBirthLabel ',
+        '?latitudeBirth ?latitudeBirthLabel ',
+        '?longitudeBirth ?longitudeBirthLabel ',    
+        '?dateOfDeath ?dateOfDeathLabel ',
+        '?placeOfDeath ?placeOfDeathLabel ',
+        '?coordinatesDeath ?coordinatesDeathLabel ',
+        '?latitudeDeath ?latitudeDeathLabel ',
+        '?longitudeDeath ?longitudeDeathLabel ',
+        '?genre ?genreLabel ',
+        '?movement ?movementLabel ',
+         '   WHERE ',
+         '       {',
+                 # Family name
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P734 ?familyName .}',    
+                 # Given name
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P735 ?givenName .}', 
+                 # Date of birth
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P569 ?dateOfBirth .}', 
+                 # Place of birth
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P19 ?placeOfBirth .}',   
+                 # Coordinates of place of birth
+         '       OPTIONAL{ ?placeOfBirth wdt:P625 ?coordinatesBirth .', 
+                 # Latitude of place of birth
+         '       BIND(geof:latitude(?coordinatesBirth) AS ?latitudeBirth) .', 
+                 # Longitude of place of birth
+         '       BIND(geof:longitude(?coordinatesBirth) AS ?longitudeBirth) .}',  
+                 # Date of death
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P570 ?dateOfDeath .}', 
+                 # Place of death
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P20 ?placeOfDeath .}',   
+                 # Coordinates of place of death
+         '       OPTIONAL{ ?placeOfDeath wdt:P625 ?coordinatesDeath .',
+                 # Latitude of place of death            
+         '       BIND(geof:latitude(?coordinatesDeath) AS ?latitudeDeath) .', 
+                 # Longitude of place of death
+         '       BIND(geof:longitude(?coordinatesDeath) AS ?longitudeDeath) .}', 
+                 # Genre(s)
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P136 ?genre .}', 
+                 # Movement(s)
+         '       OPTIONAL{ wd:'+artist_id+' wdt:P135 ?movement .}',    
+         '       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" .}'
+         '       }'
+    )
+        
+    # Send query request
+    r = requests.get(url, params= {'format': 'json', 'query': "".join(query)})
+    
+    # Convert to dictionary
+    data = r.json()
+    
+    # Name information
+    try:
+        family_name = data['results']['bindings'][0]['familyNameLabel']['value']
+    except:
+        family_name = ''
+        
+    try:
+        given_name = data['results']['bindings'][0]['givenNameLabel']['value']
+    except:
+        given_name = '' 
+        
+    # Birth information
+    try:
+        date_of_birth = data['results']['bindings'][0]['dateOfBirthLabel']['value'].rsplit('T')[0]
+    except:
+        date_of_birth = ''
+        
+    try:
+        place_of_birth = data['results']['bindings'][0]['placeOfBirthLabel']['value']
+    except:
+        place_of_birth = ''
+        
+    try:
+        place_of_birth_latitude = data['results']['bindings'][0]['latitudeBirth']['value']
+        place_of_birth_longitude = data['results']['bindings'][0]['longitudeBirth']['value']
+    except:
+        place_of_birth_latitude = ''
+        place_of_birth_longitude = ''
+        
+    # Death information
+    try:
+        date_of_death = data['results']['bindings'][0]['dateOfDeathLabel']['value'].rsplit('T')[0]
+    except:
+        date_of_death = ''
+        
+    try:
+        place_of_death = data['results']['bindings'][0]['placeOfDeathLabel']['value']
+    except:
+        place_of_death = ''
+        
+    try:
+        place_of_death_latitude = data['results']['bindings'][0]['latitudeDeath']['value']
+        place_of_death_longitude = data['results']['bindings'][0]['longitudeDeath']['value']
+    except:
+        place_of_death_latitude = ''
+        place_of_death_longitude = ''
+        
+    # Genre(s)
+    genres = []
+    try:
+        for element in data['results']['bindings']:
+            genre = element['genreLabel']['value']
+            # Avoid duplicates
+            if genre not in genres:
+                genres.append(genre)
+    except:
+        pass
+    
+    # Movements(s)
+    try:
+        movements = []
+        for element in data['results']['bindings']:
+            movement = element['movementLabel']['value']
+            # Avoid duplicates
+            if movement not in movements:
+                movements.append(movement)
+    except:
+        pass
+    
+    metadata = {
+        'family name': family_name,
+        'given name': given_name,
+        'date of birth': date_of_birth,
+        'place of birth': place_of_birth,
+        'latitude of place of birth' : round(float(place_of_birth_latitude),2),
+        'longitude of place of birth' : round(float(place_of_birth_longitude),2),
+        'date of death': date_of_death,
+        'place of death': place_of_death,
+        'latitude of place of death' : round(float(place_of_death_latitude),2),
+        'longitude of place of death' : round(float(place_of_death_longitude),2),
+        'genres': [genre for genre in genres],
+        'movements': [movement for movement in movements],
+    }
+    
+    return metadata
+
+def get_artist_wikidata_id(artist_link):
+    
+    # Launch Firefox browser
+    driver = webdriver.Firefox()
+
+    # Get Google Arts & Culture webpage for the artist
+    driver.get(artist_link)
+
+    # Locate the element containing the link to the artist's Wikipedia article
+    element = driver.find_element('xpath','//*[contains(@href,"wikipedia")]')
+    # Extract the link to the Wikipedia article
+    wikipedia_link = element.get_attribute('href')
+    
+    # Get Wikipedia page for the artist
+    driver.get(wikipedia_link)
+    # Find element containing text about Wikidata
+    element = driver.find_element('xpath','//*[contains(text(),"Wikidata item")]')
+    # Find parent element of this element
+    parent_element = element.find_element('xpath', '..')
+    # Extract the link to the Wikidata page
+    wikidata_link = parent_element.get_attribute('href')
+    # Find the Wikidata ID of the artist
+    wikidata_id = wikidata_link.rsplit('/')[-1]
+    
+    return wikidata_id
