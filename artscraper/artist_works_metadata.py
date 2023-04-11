@@ -124,11 +124,12 @@ def get_artist_metadata(artist_link):
     query = [q.replace('person_id', artist_id) for q in query]
 
     # Send query request
-    request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)})
+    request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=10)
 
     # Convert response to dictionary
     data = request.json()
 
+    # Assemble metadata in a dictionary
     metadata = {
         'family name': get_single_valued_property(data, 'familyName'),
         'given name': get_single_valued_property(data, 'givenName'),
