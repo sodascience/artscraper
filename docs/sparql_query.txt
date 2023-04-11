@@ -1,0 +1,21 @@
+SELECT ?familyName ?familyNameLabel ?givenName ?givenNameLabel ?dateOfBirth ?dateOfBirthLabel ?placeOfBirth ?placeOfBirthLabel ?coordinatesBirth ?coordinatesBirthLabel ?latitudeBirth ?latitudeBirthLabel ?longitudeBirth ?longitudeBirthLabel ?dateOfDeath ?dateOfDeathLabel ?placeOfDeath ?placeOfDeathLabel ?coordinatesDeath ?coordinatesDeathLabel ?latitudeDeath ?latitudeDeathLabel ?longitudeDeath ?longitudeDeathLabel ?genre ?genreLabel ?movement ?movementLabel WHERE {
+  OPTIONAL { wd:person_id wdt:P734 ?familyName. }
+  OPTIONAL { wd:person_id wdt:P735 ?givenName. }
+  OPTIONAL { wd:person_id wdt:P569 ?dateOfBirth. }
+  OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
+  OPTIONAL {
+    ?placeOfBirth wdt:P625 ?coordinatesBirth.
+    BIND(geof:latitude(?coordinatesBirth) AS ?latitudeBirth)
+    BIND(geof:longitude(?coordinatesBirth) AS ?longitudeBirth)
+  }
+  OPTIONAL { wd:person_id wdt:P570 ?dateOfDeath. }
+  OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
+  OPTIONAL {
+    ?placeOfDeath wdt:P625 ?coordinatesDeath.
+    BIND(geof:latitude(?coordinatesDeath) AS ?latitudeDeath)
+    BIND(geof:longitude(?coordinatesDeath) AS ?longitudeDeath)
+  }
+  OPTIONAL { wd:person_id wdt:P136 ?genre. }
+  OPTIONAL { wd:person_id wdt:P135 ?movement. }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
