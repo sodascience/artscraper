@@ -1,6 +1,7 @@
 '''
-get_artist_works: Get artist links from Google Arts & Culture webpage
+get_artist_works: Get links to the artist's works, from Google Arts & Culture webpage
 get_artist_description: Get description of the artist, from Wikipedia
+get_artist_metadata: Get metadata of the artist, from Wikidata
 '''
 
 import time
@@ -98,157 +99,69 @@ def get_artist_description(artist_link):
     return description
 
 def get_artist_metadata(artist_link):
-    
+
+    '''
+    Parameters
+    ----------
+    artist_link : Web address of the artist's Google Arts & Culture page
+
+    Returns
+    -------
+    metadata: Dictionary containing metadata about the artist
+    '''
+
     # Get Wikidata ID of artist
     artist_id = get_artist_wikidata_id(artist_link)
-    
+
     # Wikidata database to query
     url = 'https://query.wikidata.org/sparql'
-    
+
     # SPARQL query
-    query = (
-        'SELECT ?familyName ?familyNameLabel ',
-        '?givenName ?givenNameLabel ',
-        '?dateOfBirth ?dateOfBirthLabel ',
-        '?placeOfBirth ?placeOfBirthLabel ',
-        '?coordinatesBirth ?coordinatesBirthLabel ',
-        '?latitudeBirth ?latitudeBirthLabel ',
-        '?longitudeBirth ?longitudeBirthLabel ',    
-        '?dateOfDeath ?dateOfDeathLabel ',
-        '?placeOfDeath ?placeOfDeathLabel ',
-        '?coordinatesDeath ?coordinatesDeathLabel ',
-        '?latitudeDeath ?latitudeDeathLabel ',
-        '?longitudeDeath ?longitudeDeathLabel ',
-        '?genre ?genreLabel ',
-        '?movement ?movementLabel ',
-         '   WHERE ',
-         '       {',
-                 # Family name
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P734 ?familyName .}',    
-                 # Given name
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P735 ?givenName .}', 
-                 # Date of birth
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P569 ?dateOfBirth .}', 
-                 # Place of birth
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P19 ?placeOfBirth .}',   
-                 # Coordinates of place of birth
-         '       OPTIONAL{ ?placeOfBirth wdt:P625 ?coordinatesBirth .', 
-                 # Latitude of place of birth
-         '       BIND(geof:latitude(?coordinatesBirth) AS ?latitudeBirth) .', 
-                 # Longitude of place of birth
-         '       BIND(geof:longitude(?coordinatesBirth) AS ?longitudeBirth) .}',  
-                 # Date of death
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P570 ?dateOfDeath .}', 
-                 # Place of death
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P20 ?placeOfDeath .}',   
-                 # Coordinates of place of death
-         '       OPTIONAL{ ?placeOfDeath wdt:P625 ?coordinatesDeath .',
-                 # Latitude of place of death            
-         '       BIND(geof:latitude(?coordinatesDeath) AS ?latitudeDeath) .', 
-                 # Longitude of place of death
-         '       BIND(geof:longitude(?coordinatesDeath) AS ?longitudeDeath) .}', 
-                 # Genre(s)
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P136 ?genre .}', 
-                 # Movement(s)
-         '       OPTIONAL{ wd:'+artist_id+' wdt:P135 ?movement .}',    
-         '       SERVICE wikibase:label { bd:serviceParam wikibase:language "en" .}'
-         '       }'
-    )
-        
+    with open('../docs/sparql_query.txt', 'r', encoding='utf-8') as file:
+        query = file.readlines()
+
+    # Replace person_id in SPARQL query with the wikidata ID of the artist
+    query = [q.replace('person_id', artist_id) for q in query]
+
     # Send query request
-    r = requests.get(url, params= {'format': 'json', 'query': "".join(query)})
-    
-    # Convert to dictionary
-    data = r.json()
-    
-    # Name information
-    try:
-        family_name = data['results']['bindings'][0]['familyNameLabel']['value']
-    except:
-        family_name = ''
-        
-    try:
-        given_name = data['results']['bindings'][0]['givenNameLabel']['value']
-    except:
-        given_name = '' 
-        
-    # Birth information
-    try:
-        date_of_birth = data['results']['bindings'][0]['dateOfBirthLabel']['value'].rsplit('T')[0]
-    except:
-        date_of_birth = ''
-        
-    try:
-        place_of_birth = data['results']['bindings'][0]['placeOfBirthLabel']['value']
-    except:
-        place_of_birth = ''
-        
-    try:
-        place_of_birth_latitude = data['results']['bindings'][0]['latitudeBirth']['value']
-        place_of_birth_longitude = data['results']['bindings'][0]['longitudeBirth']['value']
-    except:
-        place_of_birth_latitude = ''
-        place_of_birth_longitude = ''
-        
-    # Death information
-    try:
-        date_of_death = data['results']['bindings'][0]['dateOfDeathLabel']['value'].rsplit('T')[0]
-    except:
-        date_of_death = ''
-        
-    try:
-        place_of_death = data['results']['bindings'][0]['placeOfDeathLabel']['value']
-    except:
-        place_of_death = ''
-        
-    try:
-        place_of_death_latitude = data['results']['bindings'][0]['latitudeDeath']['value']
-        place_of_death_longitude = data['results']['bindings'][0]['longitudeDeath']['value']
-    except:
-        place_of_death_latitude = ''
-        place_of_death_longitude = ''
-        
-    # Genre(s)
-    genres = []
-    try:
-        for element in data['results']['bindings']:
-            genre = element['genreLabel']['value']
-            # Avoid duplicates
-            if genre not in genres:
-                genres.append(genre)
-    except:
-        pass
-    
-    # Movements(s)
-    try:
-        movements = []
-        for element in data['results']['bindings']:
-            movement = element['movementLabel']['value']
-            # Avoid duplicates
-            if movement not in movements:
-                movements.append(movement)
-    except:
-        pass
-    
+    request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)})
+
+    # Convert response to dictionary
+    data = request.json()
+
     metadata = {
-        'family name': family_name,
-        'given name': given_name,
-        'date of birth': date_of_birth,
-        'place of birth': place_of_birth,
-        'latitude of place of birth' : round(float(place_of_birth_latitude),2),
-        'longitude of place of birth' : round(float(place_of_birth_longitude),2),
-        'date of death': date_of_death,
-        'place of death': place_of_death,
-        'latitude of place of death' : round(float(place_of_death_latitude),2),
-        'longitude of place of death' : round(float(place_of_death_longitude),2),
-        'genres': [genre for genre in genres],
-        'movements': [movement for movement in movements],
+        'family name': get_single_valued_property(data, 'familyName'),
+        'given name': get_single_valued_property(data, 'givenName'),
+        'date of birth': get_single_valued_property(data, 'dateOfBirth').rsplit('T')[0],
+        'place of birth': get_single_valued_property(data, 'placeOfBirth'),
+        'latitude of place of birth' :
+            round(float(get_single_valued_property(data, 'latitudeBirth')),2),
+        'longitude of place of birth' :
+            round(float(get_single_valued_property(data, 'longitudeBirth')),2),
+        'date of death': get_single_valued_property(data, 'dateOfDeath').rsplit('T')[0],
+        'place of death': get_single_valued_property(data, 'placeOfDeath'),
+        'latitude of place of death' :
+            round(float(get_single_valued_property(data, 'latitudeDeath')),2),
+        'longitude of place of death' :
+            round(float(get_single_valued_property(data, 'longitudeDeath')),2),
+        'genres': get_multi_valued_property(data, 'genre'),
+        'movements': get_multi_valued_property(data, 'movement')
     }
-    
+
     return metadata
 
 def get_artist_wikidata_id(artist_link):
-    
+
+    '''
+    Parameters
+    ----------
+    artist_link : Web address of the artist's Google Arts & Culture page
+
+    Returns
+    -------
+    wikidata_id: Wikidata ID of the artist
+    '''
+
     # Launch Firefox browser
     driver = webdriver.Firefox()
 
@@ -259,7 +172,7 @@ def get_artist_wikidata_id(artist_link):
     element = driver.find_element('xpath','//*[contains(@href,"wikipedia")]')
     # Extract the link to the Wikipedia article
     wikipedia_link = element.get_attribute('href')
-    
+
     # Get Wikipedia page for the artist
     driver.get(wikipedia_link)
     # Find element containing text about Wikidata
@@ -270,5 +183,46 @@ def get_artist_wikidata_id(artist_link):
     wikidata_link = parent_element.get_attribute('href')
     # Find the Wikidata ID of the artist
     wikidata_id = wikidata_link.rsplit('/')[-1]
-    
+
     return wikidata_id
+
+def get_single_valued_property(data, query_property):
+
+    '''
+    Parameters
+    ----------
+    data : Data, in JSON format, fetched from Wikidata query
+    query_property : Property to be extracted from data
+
+    Returns
+    -------
+    output_property : Value of extracted property
+    '''
+
+    if query_property+'Label' in data['results']['bindings'][0].keys():
+        output_property = data['results']['bindings'][0][query_property+'Label']['value']
+    else:
+        output_property = ''
+    return output_property
+
+def get_multi_valued_property(data, query_property):
+
+    '''
+    Parameters
+    ----------
+    data : Data, in JSON format, fetched from Wikidata query
+    query_property : Property to be extracted from data
+
+    Returns
+    -------
+    output_property_list : List of values of extracted property
+    '''
+
+    output_property_list = []
+    if query_property+'Label' in data['results']['bindings'][0].keys():
+        for element in data['results']['bindings']:
+            output_property = element[query_property+'Label']['value']
+            # Avoid duplicates
+            if output_property not in output_property_list:
+                output_property_list.append(output_property)
+    return output_property_list
