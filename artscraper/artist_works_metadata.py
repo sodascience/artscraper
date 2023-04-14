@@ -10,6 +10,32 @@ from selenium import webdriver
 import wikipediaapi
 from artscraper.googleart import random_wait_time
 
+# SPARQL query to fetch metadata from wikidata
+
+SPARQL_QUERY = '''
+SELECT ?familyName ?familyNameLabel ?givenName ?givenNameLabel ?dateOfBirth ?dateOfBirthLabel ?placeOfBirth ?placeOfBirthLabel ?coordinatesBirth ?coordinatesBirthLabel ?latitudeBirth ?latitudeBirthLabel ?longitudeBirth ?longitudeBirthLabel ?dateOfDeath ?dateOfDeathLabel ?placeOfDeath ?placeOfDeathLabel ?coordinatesDeath ?coordinatesDeathLabel ?latitudeDeath ?latitudeDeathLabel ?longitudeDeath ?longitudeDeathLabel ?genre ?genreLabel ?movement ?movementLabel 
+WHERE {
+  OPTIONAL { wd:person_id wdt:P734 ?familyName. }
+  OPTIONAL { wd:person_id wdt:P735 ?givenName. }
+  OPTIONAL { wd:person_id wdt:P569 ?dateOfBirth. }
+  OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
+  OPTIONAL {
+    ?placeOfBirth wdt:P625 ?coordinatesBirth.
+    BIND(geof:latitude(?coordinatesBirth) AS ?latitudeBirth)
+    BIND(geof:longitude(?coordinatesBirth) AS ?longitudeBirth)
+  }
+  OPTIONAL { wd:person_id wdt:P570 ?dateOfDeath. }
+  OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
+  OPTIONAL {
+    ?placeOfDeath wdt:P625 ?coordinatesDeath.
+    BIND(geof:latitude(?coordinatesDeath) AS ?latitudeDeath)
+    BIND(geof:longitude(?coordinatesDeath) AS ?longitudeDeath)
+  }
+  OPTIONAL { wd:person_id wdt:P136 ?genre. }
+  OPTIONAL { wd:person_id wdt:P135 ?movement. }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+'''
 
 def get_artist_works(artist_link, min_wait_time):
 
@@ -73,7 +99,6 @@ def get_artist_description(artist_link):
     Returns
     -------
     description : String containing description of artist (lead section of Wikipedia article)
-
     '''
 
     # Launch Firefox browser
@@ -116,12 +141,8 @@ def get_artist_metadata(artist_link):
     # Wikidata database to query
     url = 'https://query.wikidata.org/sparql'
 
-    # SPARQL query
-    with open('../docs/sparql_query.txt', 'r', encoding='utf-8') as file:
-        query = file.readlines()
-
     # Replace person_id in SPARQL query with the wikidata ID of the artist
-    query = [q.replace('person_id', artist_id) for q in query]
+    query = SPARQL_QUERY.replace('person_id', artist_id)
 
     # Send query request
     request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=10)
@@ -136,15 +157,15 @@ def get_artist_metadata(artist_link):
         'date of birth': get_single_valued_property(data, 'dateOfBirth').rsplit('T')[0],
         'place of birth': get_single_valued_property(data, 'placeOfBirth'),
         'latitude of place of birth' :
-            round(float(get_single_valued_property(data, 'latitudeBirth')),2),
+            float(get_single_valued_property(data, 'latitudeBirth')),
         'longitude of place of birth' :
-            round(float(get_single_valued_property(data, 'longitudeBirth')),2),
+            float(get_single_valued_property(data, 'longitudeBirth')),
         'date of death': get_single_valued_property(data, 'dateOfDeath').rsplit('T')[0],
         'place of death': get_single_valued_property(data, 'placeOfDeath'),
         'latitude of place of death' :
-            round(float(get_single_valued_property(data, 'latitudeDeath')),2),
+            float(get_single_valued_property(data, 'latitudeDeath')),
         'longitude of place of death' :
-            round(float(get_single_valued_property(data, 'longitudeDeath')),2),
+            float(get_single_valued_property(data, 'longitudeDeath')),
         'genres': get_multi_valued_property(data, 'genre'),
         'movements': get_multi_valued_property(data, 'movement')
     }
@@ -204,6 +225,7 @@ def get_single_valued_property(data, query_property):
         output_property = data['results']['bindings'][0][query_property+'Label']['value']
     else:
         output_property = ''
+
     return output_property
 
 def get_multi_valued_property(data, query_property):
@@ -226,4 +248,5 @@ def get_multi_valued_property(data, query_property):
             # Avoid duplicates
             if output_property not in output_property_list:
                 output_property_list.append(output_property)
+
     return output_property_list
