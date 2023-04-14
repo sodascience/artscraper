@@ -13,7 +13,21 @@ from artscraper.googleart import random_wait_time
 # SPARQL query to fetch metadata from wikidata
 
 SPARQL_QUERY = '''
-SELECT ?familyName ?familyNameLabel ?givenName ?givenNameLabel ?dateOfBirth ?dateOfBirthLabel ?placeOfBirth ?placeOfBirthLabel ?coordinatesBirth ?coordinatesBirthLabel ?latitudeBirth ?latitudeBirthLabel ?longitudeBirth ?longitudeBirthLabel ?dateOfDeath ?dateOfDeathLabel ?placeOfDeath ?placeOfDeathLabel ?coordinatesDeath ?coordinatesDeathLabel ?latitudeDeath ?latitudeDeathLabel ?longitudeDeath ?longitudeDeathLabel ?genre ?genreLabel ?movement ?movementLabel 
+SELECT 
+?familyName ?familyNameLabel 
+?givenName ?givenNameLabel 
+?dateOfBirth ?dateOfBirthLabel 
+?placeOfBirth ?placeOfBirthLabel 
+?coordinatesBirth ?coordinatesBirthLabel 
+?latitudeBirth ?latitudeBirthLabel 
+?longitudeBirth ?longitudeBirthLabel 
+?dateOfDeath ?dateOfDeathLabel 
+?placeOfDeath ?placeOfDeathLabel 
+?coordinatesDeath ?coordinatesDeathLabel 
+?latitudeDeath ?latitudeDeathLabel 
+?longitudeDeath ?longitudeDeathLabel 
+?genre ?genreLabel 
+?movement ?movementLabel 
 WHERE {
   OPTIONAL { wd:person_id wdt:P734 ?familyName. }
   OPTIONAL { wd:person_id wdt:P735 ?givenName. }
