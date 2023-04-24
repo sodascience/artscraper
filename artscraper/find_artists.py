@@ -4,14 +4,15 @@ Get artist links from Google Arts & Culture webpage
 
 import time
 from selenium import webdriver
-from artscraper.googleart import random_wait_time
+from artscraper.functions import random_wait_time
 
-
-def get_artist_links(webpage):
+def get_artist_links(webpage='https://artsandculture.google.com/category/artist', executable_path=None, output_file=None):
     '''
     Parameters
     ----------
     webpage : Web address of Google Arts & Culture artists page
+    executable_path: Path to geckodriver
+    output_file: File to which the list of links is to be written
 
     Returns
     -------
@@ -19,7 +20,7 @@ def get_artist_links(webpage):
     '''
 
     # Launch Firefox browser
-    driver = webdriver.Firefox()
+    driver = webdriver.Firefox(executable_path=executable_path)
 
     # Get Google Arts & Culture webpage listing all artists
     driver.get(webpage)
@@ -40,11 +41,20 @@ def get_artist_links(webpage):
     # Find xpaths containing artist links
     elements = driver.find_elements('xpath', '//*[contains(@href,"categoryId=artist")]')
 
+    # Close driver
+    driver.close()
+    
     # List to store artist links
     list_links = []
     # Go through each xpath containing an artist link
     for element in elements:
         # Append to list
         list_links.append(element.get_attribute('href'))
-
+        
+    if output_file:        
+        with open('output_file', 'w') as file:
+            for element in list_links:
+                file.write(element)
+                file.write('\n')
+            
     return list_links
