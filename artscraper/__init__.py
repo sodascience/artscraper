@@ -7,5 +7,5 @@ from artscraper.find_artworks import FindArtworks
 from artscraper.find_artists import get_artist_links
 
 __all__ = ["GoogleArtScraper", "WikiArtScraper",
-           "FindArtworks", "get_artist_links", 
+           "FindArtworks", "get_artist_links",
            "random_wait_time"]
