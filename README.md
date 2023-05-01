@@ -1,3 +1,4 @@
+
 # ArtScraper
 
 ArtScraper is a tool to download images and metadata for artworks available on
@@ -105,6 +106,59 @@ with GoogleArtScraper("data/output/googlearts") as scraper:
 This will store both the image itself and the metadata in separate folders. If
 you use ArtScraper in this way, it will skip images/metadata that is already
 present. Remove the directory to force it to redownload it.
+
+## Get list of all artists from Google Arts & Culture website
+
+See [example notebook](examples/example_collect_all_artworks.ipynb). A list with the Google Arts& Culture web addresses of all artists is returned.
+```python
+from artscraper import get_artist_links
+
+# Get links for all artists, as a list. The links are also saved in a file.
+artist_urls = get_artist_links(executable_path='geckodriver', min_wait_time=1, output_file='artist_links.txt')
+```
+
+## Get links to an artist's works
+A list of all works by a particular artist, specified by the address of their Google Arts & Culture webpage, is returned.
+  
+```python
+# Find links to artworks for a particular artist, from their Google Arts & Culture webpage url
+    with FindArtworks(artist_link=artist_url, output_dir=output_dir, min_wait_time=1) as scraper:
+		    # Get list of artist's works
+            artwork_links = scraper.get_artist_works()
+```
+
+## Get metadata about an artist
+Metadata for the artist is returned.
+```python
+# Get metadata for a particular artist, from their Google Arts & Culture webpage url
+    with FindArtworks(artist_link=artist_url, output_dir=output_dir, min_wait_time=1) as scraper:
+		    # Get list of artist's works
+            artwork_links = scraper.get_artist_metadata()
+```
+
+## Collect data about all artists, and all their artworks
+From a list containing links to all the artists, the following are saved, for each artist:
+1. List containing all works by the artist
+2. Description of the artist
+3. Metadata of the artist
+4. Image and metadata of each artwork by the artist
+```python
+for artist_url in artist_urls:
+    with FindArtworks(artist_link=artist_url, output_dir=output_dir, min_wait_time=1) as scraper:
+            # Save list of works, description, and metadata for an artist
+            scraper.save_artist_information()
+            # Get list of links to this artist's works 
+            artwork_links = scraper.get_artist_works()
+            # Create directory for this artist
+            artist_dir = output_dir + '/' + scraper.get_wikipedia_article_title()
+    # Scrape artworks
+    with GoogleArtScraper(artist_dir + '/' + 'works', min_wait=1) as subscraper:
+        # Go through each artwork link
+        for url in artwork_links:
+            subscraper.load_link(url)
+            subscraper.save_metadata()
+            subscraper.save_image()
+```
 
 ## Troubleshooting
 
