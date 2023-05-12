@@ -6,6 +6,10 @@ get_artist_description: Get description of the artist, from Wikipedia
 get_artist_metadata: Get metadata of the artist, from Wikidata
 
 '''
+
+# Allow __init__ function to have more than 5 arguments
+#pylint: disable-msg=too-many-arguments
+
 from pathlib import Path
 
 import time
@@ -13,7 +17,6 @@ import re
 import requests
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 
 import wikipediaapi
 
@@ -65,7 +68,7 @@ class FindArtworks:
                   OPTIONAL { wd:person_id wdt:P734 ?familyName. }
                   OPTIONAL { wd:person_id wdt:P735 ?givenName. }
                   OPTIONAL { wd:person_id wdt:P21 ?sexOrGender. }
-                  OPTIONAL { 
+                  OPTIONAL {
                       wd:person_id wdt:P569 ?dateTimeOfBirth.
                       BIND (xsd:date(?dateTimeOfBirth) AS ?dateOfBirth)
                   }
@@ -75,10 +78,10 @@ class FindArtworks:
                     BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
                     BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
                   }
-                  OPTIONAL { 
+                  OPTIONAL {
                       wd:person_id wdt:P569 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
-                  }              
+                  }
                   OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
                   OPTIONAL {
                     ?placeOfDeath wdt:P625 ?coordinatesDeath.
@@ -95,7 +98,7 @@ class FindArtworks:
                 '''
         else:
             self.sparql_query = sparql_query
-        
+
         # Open web browser
         self.driver = webdriver.Firefox(executable_path=self.executable_path)
 
@@ -108,7 +111,7 @@ class FindArtworks:
         # Close web browser
         self.driver.close()
 
-        
+
     def get_artist_information(self):
 
         '''
@@ -144,7 +147,7 @@ class FindArtworks:
         artist_description_file = pathname_directory + '/' + 'description.txt'
         artist_metadata_file = pathname_directory + '/' + 'metadata.txt'
 
-        # Save artist's works, description, metadata 
+        # Save artist's works, description, metadata
         with open(artist_works_file, 'w', encoding='utf-8') as file:
             for link in artist_works:
                 file.write(f'{link}\n')
@@ -153,7 +156,7 @@ class FindArtworks:
         with open(artist_metadata_file, 'w', encoding='utf-8') as file:
             for key,value in artist_metadata.items():
                 file.write(f'{key} : {value}\n')
-                
+
 
     def get_artist_works(self):
 
@@ -176,7 +179,7 @@ class FindArtworks:
         # Find right arrow button
         right_arrow_element = parent_element.find_element('xpath', \
             './/*[contains(@data-gaaction,"rightArrow")]')
-        
+
         # Check if right arrow button can still be clicked
         while right_arrow_element.get_attribute('tabindex') is not None:
             # Find right arrow button
@@ -186,16 +189,16 @@ class FindArtworks:
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
             # Wait for page to load
             time.sleep(random_wait_time(min_wait=self.min_wait_time))
-            
+
         # List of all elements with links to artworks
         elements = right_arrow_element.find_elements('xpath', \
                 '//*[contains(@href,"/asset/")]')
-            
+
         # Get the links from the XPath elements
         list_links = [element.get_attribute('href') for element in elements]
 
         return list_links
-    
+
 
     def get_artist_description(self):
 
@@ -236,7 +239,7 @@ class FindArtworks:
         query = self.sparql_query.replace('person_id', artist_id)
 
         # Send query request
-        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=10)
+        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=30)
 
         # Convert response to dictionary
         data = request.json()
@@ -245,13 +248,15 @@ class FindArtworks:
         properties_query = re.findall(r"\?[^\s]*Label\b", self.sparql_query)
 
         # Remove redundant prefix and suffix
-        properties = [property.removeprefix('?').removesuffix('Label') for property in properties_query]
+        properties = [property.removeprefix('?').removesuffix('Label') \
+                      for property in properties_query]
 
         # Assemble metadata in a dictionary
-        metadata = {re.sub('(\B[A-Z])', r' \1', property).lower(): self._get_property(data, property) for property in properties}
-        
+        metadata = {re.sub(r'(\B[A-Z])', r' \1', property).lower(): \
+                    self._get_property(data, property) for property in properties}
+
         return metadata
-    
+
 
     def get_wikipedia_article_link(self):
 
@@ -321,15 +326,6 @@ class FindArtworks:
 
     def _get_property(self, data, query_property):
 
-        '''
-        Parameters
-        ----------
-        data : Data, in JSON format, fetched from Wikidata query
-        query_property : Property to be extracted from data
-        Returns
-        -------
-        output_property : Value of extracted property
-        '''
         '''
         Parameters
         ----------
