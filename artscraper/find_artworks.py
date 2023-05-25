@@ -6,13 +6,17 @@ get_artist_description: Get description of the artist, from Wikipedia
 get_artist_metadata: Get metadata of the artist, from Wikidata
 
 '''
+
+# Allow __init__ function to have more than 5 arguments
+#pylint: disable-msg=too-many-arguments
+
 from pathlib import Path
 
 import time
+import re
 import requests
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
 
 import wikipediaapi
 
@@ -25,7 +29,7 @@ class FindArtworks:
     '''
 
     def __init__(self, artist_link, executable_path='geckodriver',
-                 output_dir='./data', min_wait_time=5):
+                 output_dir='./data', sparql_query= None, min_wait_time=5):
 
         # Link to artist's Google Arts & Culture webpage
         self.artist_link = artist_link
@@ -40,52 +44,61 @@ class FindArtworks:
         self.min_wait_time = min_wait_time
 
         # SPARQL query to fetch metadata from wikidata
-        self.sparql_query = '''
-            SELECT
-            ?familyName ?familyNameLabel
-            ?givenName ?givenNameLabel
-            ?sexOrGender ?sexOrGenderLabel
-            ?dateOfBirth ?dateOfBirthLabel
-            ?placeOfBirth ?placeOfBirthLabel
-            ?coordinatesBirth ?coordinatesBirthLabel
-            ?latitudeBirth ?latitudeBirthLabel
-            ?longitudeBirth ?longitudeBirthLabel
-            ?dateOfDeath ?dateOfDeathLabel
-            ?placeOfDeath ?placeOfDeathLabel
-            ?coordinatesDeath ?coordinatesDeathLabel
-            ?latitudeDeath ?latitudeDeathLabel
-            ?longitudeDeath ?longitudeDeathLabel
-            ?countryOfCitizenship ?countryOfCitizenshipLabel
-            ?residence ?residenceLabel
-            ?workLocation ?workLocationLabel
-            ?genre ?genreLabel
-            ?movement ?movementLabel
-            WHERE {
-              OPTIONAL { wd:person_id wdt:P734 ?familyName. }
-              OPTIONAL { wd:person_id wdt:P735 ?givenName. }
-              OPTIONAL { wd:person_id wdt:P21 ?sexOrGender. }
-              OPTIONAL { wd:person_id wdt:P569 ?dateOfBirth. }
-              OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
-              OPTIONAL {
-                ?placeOfBirth wdt:P625 ?coordinatesBirth.
-                BIND(geof:latitude(?coordinatesBirth) AS ?latitudeBirth)
-                BIND(geof:longitude(?coordinatesBirth) AS ?longitudeBirth)
-              }
-              OPTIONAL { wd:person_id wdt:P570 ?dateOfDeath. }
-              OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
-              OPTIONAL {
-                ?placeOfDeath wdt:P625 ?coordinatesDeath.
-                BIND(geof:latitude(?coordinatesDeath) AS ?latitudeDeath)
-                BIND(geof:longitude(?coordinatesDeath) AS ?longitudeDeath)
-              }
-              OPTIONAL { wd:person_id wdt:P27 ?countryOfCitizenship. }
-              OPTIONAL { wd:person_id wdt:P551 ?residence. }
-              OPTIONAL { wd:person_id wdt:P937 ?workLocation. }
-              OPTIONAL { wd:person_id wdt:P136 ?genre. }
-              OPTIONAL { wd:person_id wdt:P135 ?movement. }
-              SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
-            }
-            '''
+        if sparql_query is None:
+            # Default SPARQL query
+            self.sparql_query = '''
+                SELECT
+                ?familyName ?familyNameLabel
+                ?givenName ?givenNameLabel
+                ?sexOrGender ?sexOrGenderLabel
+                ?dateOfBirth ?dateOfBirthLabel
+                ?placeOfBirth ?placeOfBirthLabel
+                ?latitudeOfPlaceOfBirth ?latitudeOfPlaceOfBirthLabel
+                ?longitudeOfPlaceOfBirth ?longitudeOfPlaceOfBirthLabel
+                ?dateOfDeath ?dateOfDeathLabel
+                ?placeOfDeath ?placeOfDeathLabel
+                ?latitudeOfPlaceOfDeath ?latitudeOfPlaceOfDeathLabel
+                ?longitudeOfPlaceOfDeath ?longitudeOfPlaceOfDeathLabel
+                ?countryOfCitizenship ?countryOfCitizenshipLabel
+                ?residence ?residenceLabel
+                ?workLocation ?workLocationLabel
+                ?genre ?genreLabel
+                ?movement ?movementLabel
+                WHERE {
+                  OPTIONAL { wd:person_id wdt:P734 ?familyName. }
+                  OPTIONAL { wd:person_id wdt:P735 ?givenName. }
+                  OPTIONAL { wd:person_id wdt:P21 ?sexOrGender. }
+                  OPTIONAL {
+                      wd:person_id wdt:P569 ?dateTimeOfBirth.
+                      BIND (xsd:date(?dateTimeOfBirth) AS ?dateOfBirth)
+                  }
+                  OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
+                  OPTIONAL {
+                    ?placeOfBirth wdt:P625 ?coordinatesBirth.
+                    BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
+                    BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
+                  }
+                  OPTIONAL {
+                      wd:person_id wdt:P569 ?dateTimeOfDeath.
+                      BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
+                  }
+                  OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
+                  OPTIONAL {
+                    ?placeOfDeath wdt:P625 ?coordinatesDeath.
+                    BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
+                    BIND(geof:longitude(?coordinatesDeath) AS ?longitudeOfPlaceOfDeath)
+                  }
+                  OPTIONAL { wd:person_id wdt:P27 ?countryOfCitizenship. }
+                  OPTIONAL { wd:person_id wdt:P551 ?residence. }
+                  OPTIONAL { wd:person_id wdt:P937 ?workLocation. }
+                  OPTIONAL { wd:person_id wdt:P136 ?genre. }
+                  OPTIONAL { wd:person_id wdt:P135 ?movement. }
+                  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+                }
+                '''
+        else:
+            self.sparql_query = sparql_query
+
         # Open web browser
         self.driver = webdriver.Firefox(executable_path=self.executable_path)
 
@@ -97,6 +110,7 @@ class FindArtworks:
     def __exit__(self, _exc_type, _exc_val, _exc_tb):
         # Close web browser
         self.driver.close()
+
 
     def get_artist_information(self):
 
@@ -124,13 +138,16 @@ class FindArtworks:
         artist_works, artist_description, artist_metadata = self.get_artist_information()
         artist_name = self.get_wikipedia_article_title()
 
+        # Create directory for artist
         pathname_directory = self.output_dir + '/' + artist_name
         Path(pathname_directory).mkdir(parents=True, exist_ok=True)
 
+        # Filenames for artist's works, description, metadata
         artist_works_file = pathname_directory + '/' + 'works.txt'
         artist_description_file = pathname_directory + '/' + 'description.txt'
         artist_metadata_file = pathname_directory + '/' + 'metadata.txt'
 
+        # Save artist's works, description, metadata
         with open(artist_works_file, 'w', encoding='utf-8') as file:
             for link in artist_works:
                 file.write(f'{link}\n')
@@ -159,24 +176,12 @@ class FindArtworks:
         # Find the parent element corresponding to the text heading
         parent_element = element.find_element('xpath', '../..')
 
-        try:
-            # Find element which contains number of artworks in the text
-            element_with_num_items = parent_element.find_element('xpath',
-                                                                 '//h3[contains(text(), "items")]')
-            # Extract text containing total number of artworks for this artist
-            num_items_text = element_with_num_items.text
-            # Total number of artworks for this artist
-            num_items = int(num_items_text.split(' ')[0])
+        # Find right arrow button
+        right_arrow_element = parent_element.find_element('xpath', \
+            './/*[contains(@data-gaaction,"rightArrow")]')
 
-        except NoSuchElementException:
-            # Less than 1 page of images:
-            # No right-scrolling needed
-            num_items =1
-
-        #Initialize list of elements with links to artworks
-        elements = []
-
-        while len(elements) < num_items:
+        # Check if right arrow button can still be clicked
+        while right_arrow_element.get_attribute('tabindex') is not None:
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
@@ -184,8 +189,9 @@ class FindArtworks:
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
             # Wait for page to load
             time.sleep(random_wait_time(min_wait=self.min_wait_time))
-            # List of all elements with links to artworks, at this stage
-            elements = right_arrow_element.find_elements('xpath', \
+
+        # List of all elements with links to artworks
+        elements = right_arrow_element.find_elements('xpath', \
                 '//*[contains(@href,"/asset/")]')
 
         # Get the links from the XPath elements
@@ -233,36 +239,24 @@ class FindArtworks:
         query = self.sparql_query.replace('person_id', artist_id)
 
         # Send query request
-        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=10)
+        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=30)
 
         # Convert response to dictionary
         data = request.json()
 
+        # Extract properties searched by the SPARQL query
+        properties_query = re.findall(r"\?[^\s]*Label\b", self.sparql_query)
+
+        # Remove redundant prefix and suffix
+        properties = [property.removeprefix('?').removesuffix('Label') \
+                      for property in properties_query]
+
         # Assemble metadata in a dictionary
-        metadata = {
-            'family name': self._get_single_valued_property(data, 'familyName'),
-            'given name': self._get_single_valued_property(data, 'givenName'),
-            'sex or gender': self._get_single_valued_property(data, 'sexOrGender'),
-            'date of birth': self._get_single_valued_property(data, 'dateOfBirth').rsplit('T')[0],
-            'place of birth': self._get_single_valued_property(data, 'placeOfBirth'),
-            'latitude of place of birth' :
-                float(self._get_single_valued_property(data, 'latitudeBirth')),
-            'longitude of place of birth' :
-                float(self._get_single_valued_property(data, 'longitudeBirth')),
-            'date of death': self._get_single_valued_property(data, 'dateOfDeath').rsplit('T')[0],
-            'place of death': self._get_single_valued_property(data, 'placeOfDeath'),
-            'latitude of place of death' :
-                float(self._get_single_valued_property(data, 'latitudeDeath')),
-            'longitude of place of death' :
-                float(self._get_single_valued_property(data, 'longitudeDeath')),
-            'country of citizenship': self._get_multi_valued_property(data, 'countryOfCitizenship'),
-            'residence': self._get_multi_valued_property(data, 'residence'),
-            'work location': self._get_multi_valued_property(data, 'workLocation'),
-            'genre': self._get_multi_valued_property(data, 'genre'),
-            'movement': self._get_multi_valued_property(data, 'movement')
-        }
+        metadata = {re.sub(r'(\B[A-Z])', r' \1', property).lower(): \
+                    self._get_property(data, property) for property in properties}
 
         return metadata
+
 
     def get_wikipedia_article_link(self):
 
@@ -329,37 +323,17 @@ class FindArtworks:
 
         return wikidata_id
 
-    def _get_single_valued_property(self, data, query_property):
+
+    def _get_property(self, data, query_property):
 
         '''
         Parameters
         ----------
         data : Data, in JSON format, fetched from Wikidata query
         query_property : Property to be extracted from data
-
         Returns
         -------
-        output_property : Value of extracted property
-        '''
-
-        if query_property+'Label' in data['results']['bindings'][0].keys():
-            output_property = data['results']['bindings'][0][query_property+'Label']['value']
-        else:
-            output_property = ''
-
-        return output_property
-
-    def _get_multi_valued_property(self, data, query_property):
-
-        '''
-        Parameters
-        ----------
-        data : Data, in JSON format, fetched from Wikidata query
-        query_property : Property to be extracted from data
-
-        Returns
-        -------
-        output_property_list : List of values of extracted property
+        output_property_list : Value(s) of extracted property
         '''
 
         output_property_list = []
@@ -369,5 +343,9 @@ class FindArtworks:
                 # Avoid duplicates
                 if output_property not in output_property_list:
                     output_property_list.append(output_property)
+            if len(output_property_list)==1:
+                output_property_list = output_property_list[0]
+            return output_property_list
 
-        return output_property_list
+        # Property doesn't exist
+        return ''
