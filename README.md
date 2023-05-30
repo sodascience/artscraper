@@ -12,7 +12,7 @@ The ArtScraper package can be installed with pip, which automatically installs
 the python dependencies:
 
 ```
-pip install https://github.com/sodascience/artscraper.git
+pip install artscraper
 ```
 
 
