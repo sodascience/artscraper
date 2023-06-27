@@ -20,7 +20,7 @@ from selenium import webdriver
 
 import wikipediaapi
 
-from artscraper.functions import random_wait_time
+from artscraper.functions import random_wait_time, retry
 
 class FindArtworks:
     '''
@@ -29,7 +29,7 @@ class FindArtworks:
     '''
 
     def __init__(self, artist_link, executable_path='geckodriver',
-                 output_dir='./data', sparql_query= None, min_wait_time=5):
+                 output_dir='./data', sparql_query= None, min_wait_time=5, max_retries=10):
 
         # Link to artist's Google Arts & Culture webpage
         self.artist_link = artist_link
@@ -42,7 +42,9 @@ class FindArtworks:
         self.output_dir = output_dir
         # Minimum wait time between two clicks while scrolling a webpage
         self.min_wait_time = min_wait_time
-
+        # Total number of attempts at executing a function before giving up
+        self.max_retries = max_retries
+        
         # SPARQL query to fetch metadata from wikidata
         if sparql_query is None:
             # Default SPARQL query
@@ -120,10 +122,10 @@ class FindArtworks:
         artist_works, artist_description, artist_metadata : All information about the artist
 
         '''
-
-        artist_works = self.get_artist_works()
-        artist_description = self.get_artist_description()
-        artist_metadata = self.get_artist_metadata()
+        
+        artist_works = retry(self.get_artist_works, self.max_retries, self.min_wait_time)
+        artist_description = retry(self.get_artist_description, self.max_retries, self.min_wait_time)
+        artist_metadata = retry(self.get_artist_metadata, self.max_retries, self.min_wait_time)
 
         return artist_works, artist_description, artist_metadata
 

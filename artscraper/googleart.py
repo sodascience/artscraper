@@ -12,7 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from artscraper.base import BaseArtScraper
-from artscraper.functions import random_wait_time
+from artscraper.functions import random_wait_time, retry
 
 class GoogleArtScraper(BaseArtScraper):
     """Class for scraping GoogleArt images.
@@ -30,8 +30,8 @@ class GoogleArtScraper(BaseArtScraper):
     """
 
     def __init__(self, output_dir=None, skip_existing=True, min_wait=5,
-                 geckodriver_path="geckodriver"):
-        super().__init__(output_dir, skip_existing, min_wait=min_wait)
+                 geckodriver_path="geckodriver", max_retries=10):
+        super().__init__(output_dir, skip_existing, min_wait=min_wait, max_retries=max_retries)
         self.driver = webdriver.Firefox(executable_path=geckodriver_path)
         self.last_request = time.time() - 100
 
@@ -46,12 +46,13 @@ class GoogleArtScraper(BaseArtScraper):
         if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
-                    and Path(self.paint_dir, "painting.png").is_file()):
+                    and Path(self.paint_dir, "artwork.png").is_file()):
                 return False
             self.paint_dir.mkdir(exist_ok=True, parents=True)
 
         self.wait(self.min_wait)
-        self.driver.get(link)
+        #self.driver.get(link)
+        retry(self.driver.get, self.max_retries, link)
         return True
 
     @property
@@ -107,7 +108,7 @@ class GoogleArtScraper(BaseArtScraper):
 
         paint_id = urlparse(self.link).path.split("/")[-1]
         self.wait(self.min_wait, update=False)
-        elem = self.driver.find_element("xpath", f'//*[@id="metadata-{paint_id}"]')
+        elem = retry(self.driver.find_element, self.max_retries, self.min_wait_time, "xpath", f'//*[@id="metadata-{paint_id}"]')
         inner_HTML = elem.get_attribute("innerHTML")
         soup = BeautifulSoup(inner_HTML, features="html.parser")
 

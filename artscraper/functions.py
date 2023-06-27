@@ -1,9 +1,10 @@
+import time 
+from random import random
+
 '''
 random_wait_time: Function to determine a random wait time
 between two events
 '''
-
-from random import random
 
 def random_wait_time(min_wait=5, max_wait=None):
     """Compute a random wait time.
@@ -42,3 +43,29 @@ def random_wait_time(min_wait=5, max_wait=None):
         return (b**-beta - beta * x / a)**(-1 / beta)
 
     return inv_cdf(random())
+
+
+def retry(function, max_retries=10, min_wait_time=10, *args):
+    '''
+    Parameters
+    ----------
+    function: Function to run again
+    max_retries: Maximum number of times to retry
+    args: Arguments of the function
+
+    Returns
+    -------
+    Value returned by function, or prints an error message
+    '''
+    
+    num_attempt = 0
+    while num_attempt < max_retries:
+        
+        try:
+            return function(*args)
+        except Exception as e:
+            print(f'Function {function} failed at attempt {num_attempt} with exception {repr(e)}: {str(e)}')   
+            time.sleep(random_wait_time(min_wait=min_wait_time))
+            num_attempt = num_attempt + 1
+            
+    return None
