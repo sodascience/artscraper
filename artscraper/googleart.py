@@ -12,7 +12,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
 
 from artscraper.base import BaseArtScraper
-from artscraper.functions import random_wait_time, retry
+from artscraper.functions import random_wait_time
 
 class GoogleArtScraper(BaseArtScraper):
     """Class for scraping GoogleArt images.
@@ -30,8 +30,8 @@ class GoogleArtScraper(BaseArtScraper):
     """
 
     def __init__(self, output_dir=None, skip_existing=True, min_wait=5,
-                 geckodriver_path="geckodriver", max_retries=10):
-        super().__init__(output_dir, skip_existing, min_wait=min_wait, max_retries=max_retries)
+                 geckodriver_path="geckodriver"):
+        super().__init__(output_dir, skip_existing, min_wait=min_wait)
         self.driver = webdriver.Firefox(executable_path=geckodriver_path)
         self.last_request = time.time() - 100
 
@@ -43,7 +43,7 @@ class GoogleArtScraper(BaseArtScraper):
             return False
         self.link = link
 
-        if self.output_dir is not None:
+        if self.output_dir is not None:        
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
                     and Path(self.paint_dir, "artwork.png").is_file()):
@@ -51,13 +51,16 @@ class GoogleArtScraper(BaseArtScraper):
             self.paint_dir.mkdir(exist_ok=True, parents=True)
 
         self.wait(self.min_wait)
-        #self.driver.get(link)
-        retry(self.driver.get, self.max_retries, link)
+        self.driver.get(link)
         return True
 
     @property
     def paint_dir(self):
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
+        
+        # Prevent problems with too-long file/directory names
+        paint_id = paint_id[0:255]
+        
         return Path(self.output_dir, paint_id)
 
     def wait(self, min_wait, max_wait=None, update=True):
@@ -108,7 +111,7 @@ class GoogleArtScraper(BaseArtScraper):
 
         paint_id = urlparse(self.link).path.split("/")[-1]
         self.wait(self.min_wait, update=False)
-        elem = retry(self.driver.find_element, self.max_retries, self.min_wait_time, "xpath", f'//*[@id="metadata-{paint_id}"]')
+        elem = self.driver.find_element("xpath", f'//*[@id="metadata-{paint_id}"]')
         inner_HTML = elem.get_attribute("innerHTML")
         soup = BeautifulSoup(inner_HTML, features="html.parser")
 
@@ -157,6 +160,11 @@ class GoogleArtScraper(BaseArtScraper):
             return
         with open(img_fp, "wb") as f:
             f.write(self.get_image())
+
+    def save_artwork_information(self, link):
+        self.load_link(link)
+        self.save_metadata()
+        self.save_image()
 
     def close(self):
         self.driver.close()

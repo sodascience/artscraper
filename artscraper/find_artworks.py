@@ -15,12 +15,13 @@ from pathlib import Path
 import time
 import re
 import requests
+import json
 
 from selenium import webdriver
 
 import wikipediaapi
 
-from artscraper.functions import random_wait_time, retry
+from artscraper.functions import random_wait_time
 
 class FindArtworks:
     '''
@@ -29,7 +30,7 @@ class FindArtworks:
     '''
 
     def __init__(self, artist_link, executable_path='geckodriver',
-                 output_dir='./data', sparql_query= None, min_wait_time=5, max_retries=10):
+                 output_dir='./data', sparql_query= None, min_wait_time=5):
 
         # Link to artist's Google Arts & Culture webpage
         self.artist_link = artist_link
@@ -42,9 +43,7 @@ class FindArtworks:
         self.output_dir = output_dir
         # Minimum wait time between two clicks while scrolling a webpage
         self.min_wait_time = min_wait_time
-        # Total number of attempts at executing a function before giving up
-        self.max_retries = max_retries
-        
+
         # SPARQL query to fetch metadata from wikidata
         if sparql_query is None:
             # Default SPARQL query
@@ -66,6 +65,7 @@ class FindArtworks:
                 ?workLocation ?workLocationLabel
                 ?genre ?genreLabel
                 ?movement ?movementLabel
+                ?occupation ?occupationLabel
                 WHERE {
                   OPTIONAL { wd:person_id wdt:P734 ?familyName. }
                   OPTIONAL { wd:person_id wdt:P735 ?givenName. }
@@ -95,6 +95,7 @@ class FindArtworks:
                   OPTIONAL { wd:person_id wdt:P937 ?workLocation. }
                   OPTIONAL { wd:person_id wdt:P136 ?genre. }
                   OPTIONAL { wd:person_id wdt:P135 ?movement. }
+                  OPTIONAL { wd:person_id wdt:P106 ?occupation. }       
                   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
                 }
                 '''
@@ -122,10 +123,10 @@ class FindArtworks:
         artist_works, artist_description, artist_metadata : All information about the artist
 
         '''
-        
-        artist_works = retry(self.get_artist_works, self.max_retries, self.min_wait_time)
-        artist_description = retry(self.get_artist_description, self.max_retries, self.min_wait_time)
-        artist_metadata = retry(self.get_artist_metadata, self.max_retries, self.min_wait_time)
+
+        artist_works = self.get_artist_works()
+        artist_description = self.get_artist_description()
+        artist_metadata = self.get_artist_metadata()
 
         return artist_works, artist_description, artist_metadata
 
@@ -147,7 +148,7 @@ class FindArtworks:
         # Filenames for artist's works, description, metadata
         artist_works_file = pathname_directory + '/' + 'works.txt'
         artist_description_file = pathname_directory + '/' + 'description.txt'
-        artist_metadata_file = pathname_directory + '/' + 'metadata.txt'
+        artist_metadata_file = pathname_directory + '/' + 'metadata.json'
 
         # Save artist's works, description, metadata
         with open(artist_works_file, 'w', encoding='utf-8') as file:
@@ -156,8 +157,9 @@ class FindArtworks:
         with open(artist_description_file, 'w', encoding='utf-8') as file:
             file.write(artist_description)
         with open(artist_metadata_file, 'w', encoding='utf-8') as file:
-            for key,value in artist_metadata.items():
-                file.write(f'{key} : {value}\n')
+            #for key,value in artist_metadata.items():
+                #file.write(f'{key} : {value}\n')
+            json.dump(artist_metadata, file)
 
 
     def get_artist_works(self):
@@ -184,13 +186,14 @@ class FindArtworks:
 
         # Check if right arrow button can still be clicked
         while right_arrow_element.get_attribute('tabindex') is not None:
+            time.sleep(random_wait_time(min_wait=self.min_wait_time))
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
             # Click on right arrow button
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
             # Wait for page to load
-            time.sleep(random_wait_time(min_wait=self.min_wait_time))
+            #time.sleep(random_wait_time(min_wait=self.min_wait_time))
 
         # List of all elements with links to artworks
         elements = right_arrow_element.find_elements('xpath', \

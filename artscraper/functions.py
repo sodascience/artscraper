@@ -64,7 +64,8 @@ def retry(function, max_retries=10, min_wait_time=10, *args):
         try:
             return function(*args)
         except Exception as e:
-            print(f'Function {function} failed at attempt {num_attempt} with exception {repr(e)}: {str(e)}')   
+            #print(f'Function {function} failed at attempt {num_attempt} with exception {repr(e)}: {str(e)}')
+            print(f'Function {function} failed at attempt {num_attempt} with exception {repr(e)}')  
             time.sleep(random_wait_time(min_wait=min_wait_time))
             num_attempt = num_attempt + 1
             
