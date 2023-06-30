@@ -79,7 +79,7 @@ class FindArtworks:
                     BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
                   }
                   OPTIONAL {
-                      wd:person_id wdt:P569 ?dateTimeOfDeath.
+                      wd:person_id wdt:P570 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
                   }
                   OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
