@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse
+from urllib.parse import unquote
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -58,8 +59,11 @@ class GoogleArtScraper(BaseArtScraper):
     def paint_dir(self):
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
         
+        # Prevent problems with character encoding/decoding
+        paint_id = unquote(paint_id)
         # Prevent problems with too-long file/directory names
-        paint_id = paint_id[0:255]
+        if len(paint_id)>=256:
+            paint_id = paint_id[0:255]
         
         return Path(self.output_dir, paint_id)
 
@@ -101,7 +105,7 @@ class GoogleArtScraper(BaseArtScraper):
         if elem.get_attribute("id").startswith("metadata-"):
             return ''
         inner_HTML = elem.get_attribute("innerHTML")
-        return BeautifulSoup(inner_HTML, features="html.parser").text
+        return unquote(BeautifulSoup(inner_HTML, features="html.parser").text)
 
     def _get_metadata(self):
         if self.output_dir is not None and self.meta_fp.is_file():
@@ -118,9 +122,11 @@ class GoogleArtScraper(BaseArtScraper):
         paragraph_HTML = soup.find_all("li")
         metadata = {}
         metadata["main_text"] = self.get_main_text()
+        metadata["main_text"] = unquote(metadata["main_text"])
         for par in paragraph_HTML:
             name = par.find("span", text=True).contents[0].lower()[:-1]
             metadata[name] = par.text[len(name) + 2:]
+            metadata[name] = unquote(metadata[name])
         metadata["id"] = paint_id
         return metadata
 
