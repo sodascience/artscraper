@@ -16,6 +16,7 @@ import time
 import re
 import requests
 import json
+from urllib.parse import unquote
 
 from selenium import webdriver
 
@@ -81,7 +82,7 @@ class FindArtworks:
                     BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
                   }
                   OPTIONAL {
-                      wd:person_id wdt:P569 ?dateTimeOfDeath.
+                      wd:person_id wdt:P570 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
                   }
                   OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
@@ -157,9 +158,7 @@ class FindArtworks:
         with open(artist_description_file, 'w', encoding='utf-8') as file:
             file.write(artist_description)
         with open(artist_metadata_file, 'w', encoding='utf-8') as file:
-            #for key,value in artist_metadata.items():
-                #file.write(f'{key} : {value}\n')
-            json.dump(artist_metadata, file)
+            json.dump(artist_metadata, file, ensure_ascii=False)
 
 
     def get_artist_works(self):
@@ -221,8 +220,10 @@ class FindArtworks:
         # Get the Wikipedia page
         page = wiki.page(title)
         # Get summary of the page (lead section of the Wikipedia article)
-        description = page.summary
+        description = unquote(page.summary)
 
+        description = unquote(description)
+        
         return description
 
     def get_artist_metadata(self):
@@ -259,7 +260,7 @@ class FindArtworks:
         # Assemble metadata in a dictionary
         metadata = {re.sub(r'(\B[A-Z])', r' \1', property).lower(): \
                     self._get_property(data, property) for property in properties}
-
+        
         return metadata
 
 
@@ -297,8 +298,10 @@ class FindArtworks:
         # Get title of artist's Wikipedia article
         title = wikipedia_link.rsplit('/')[-1]
 
+        title = unquote(title)
+        
         return title
-
+    
     def get_artist_wikidata_id(self):
 
         '''
@@ -345,6 +348,7 @@ class FindArtworks:
         if query_property+'Label' in data['results']['bindings'][0].keys():
             for element in data['results']['bindings']:
                 output_property = element[query_property+'Label']['value']
+                output_property = unquote(output_property)
                 # Avoid duplicates
                 if output_property not in output_property_list:
                     output_property_list.append(output_property)
