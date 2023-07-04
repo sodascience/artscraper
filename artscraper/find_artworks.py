@@ -14,9 +14,9 @@ from pathlib import Path
 
 import time
 import re
-import requests
-import json
 from urllib.parse import unquote
+import json
+import requests
 
 from selenium import webdriver
 
@@ -96,7 +96,7 @@ class FindArtworks:
                   OPTIONAL { wd:person_id wdt:P937 ?workLocation. }
                   OPTIONAL { wd:person_id wdt:P136 ?genre. }
                   OPTIONAL { wd:person_id wdt:P135 ?movement. }
-                  OPTIONAL { wd:person_id wdt:P106 ?occupation. }       
+                  OPTIONAL { wd:person_id wdt:P106 ?occupation. }
                   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
                 }
                 '''
@@ -223,7 +223,7 @@ class FindArtworks:
         description = unquote(page.summary)
 
         description = unquote(description)
-        
+
         return description
 
     def get_artist_metadata(self):
@@ -245,7 +245,8 @@ class FindArtworks:
         query = self.sparql_query.replace('person_id', artist_id)
 
         # Send query request
-        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=120)
+        request = requests.get(url, params={'format': 'json', \
+                            'query': ''.join(query)}, timeout=120)
 
         # Convert response to dictionary
         data = request.json()
@@ -260,7 +261,7 @@ class FindArtworks:
         # Assemble metadata in a dictionary
         metadata = {re.sub(r'(\B[A-Z])', r' \1', property).lower(): \
                     self._get_property(data, property) for property in properties}
-        
+
         return metadata
 
 
@@ -299,9 +300,9 @@ class FindArtworks:
         title = wikipedia_link.rsplit('/')[-1]
 
         title = unquote(title)
-        
+
         return title
-    
+
     def get_artist_wikidata_id(self):
 
         '''

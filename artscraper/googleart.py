@@ -44,7 +44,7 @@ class GoogleArtScraper(BaseArtScraper):
             return False
         self.link = link
 
-        if self.output_dir is not None:        
+        if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
                     and Path(self.paint_dir, "artwork.png").is_file()):
@@ -58,13 +58,13 @@ class GoogleArtScraper(BaseArtScraper):
     @property
     def paint_dir(self):
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
-        
+
         # Prevent problems with character encoding/decoding
         paint_id = unquote(paint_id)
         # Prevent problems with too-long file/directory names
         if len(paint_id)>=256:
             paint_id = paint_id[0:255]
-        
+
         return Path(self.output_dir, paint_id)
 
     def wait(self, min_wait, max_wait=None, update=True):
@@ -168,6 +168,15 @@ class GoogleArtScraper(BaseArtScraper):
             f.write(self.get_image())
 
     def save_artwork_information(self, link):
+        """
+        Given an artwork link, saves the image and the associated metadata.
+
+        Parameters
+        ----------
+        link: str
+            Artwork URL.
+
+        """
         self.load_link(link)
         self.save_metadata()
         self.save_image()
