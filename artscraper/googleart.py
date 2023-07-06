@@ -11,6 +11,8 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
 
 from artscraper.base import BaseArtScraper
 from artscraper.functions import random_wait_time
@@ -30,10 +32,10 @@ class GoogleArtScraper(BaseArtScraper):
         is randomly drawn from a polynomial distribution.
     """
 
-    def __init__(self, output_dir=None, skip_existing=True, min_wait=5,
-                 geckodriver_path="geckodriver"):
+    def __init__(self, output_dir=None, skip_existing=True, min_wait=5):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
-        self.driver = webdriver.Firefox(executable_path=geckodriver_path)
+
+        self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
         self.last_request = time.time() - 100
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):

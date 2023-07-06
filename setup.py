@@ -21,6 +21,7 @@ setup(
         "requests",
         "selenium",
         "beautifulsoup4",
-        "wikipedia-api"
+        "wikipedia-api",
+        "webdriver-manager",
     ]
 )

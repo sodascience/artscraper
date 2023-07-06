@@ -19,6 +19,8 @@ import json
 import requests
 
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
 
 import wikipediaapi
 
@@ -30,13 +32,11 @@ class FindArtworks:
     given the link to their Google Arts & Culture webpage
     '''
 
-    def __init__(self, artist_link, executable_path='geckodriver',
+    def __init__(self, artist_link,
                  output_dir='./data', sparql_query= None, min_wait_time=5):
 
         # Link to artist's Google Arts & Culture webpage
         self.artist_link = artist_link
-        # Path to geckodriver
-        self.executable_path = executable_path
         # Directory to which the data is to be written
         # Create it if it doesn't exist
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -104,7 +104,7 @@ class FindArtworks:
             self.sparql_query = sparql_query
 
         # Open web browser
-        self.driver = webdriver.Firefox(executable_path=self.executable_path)
+        self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
 
 
     def __enter__(self):
