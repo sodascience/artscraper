@@ -142,6 +142,7 @@ class BaseArtScraper(ABC):
         metadata = self.get_metadata()
         self.paint_dir.mkdir(exist_ok=True)
         with open(meta_fp, "w", encoding='utf-8') as f:
+            # pylint: disable=invalid-name
             json.dump(metadata, f, ensure_ascii=False)
 
     @abstractmethod

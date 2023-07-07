@@ -52,6 +52,7 @@ class FindArtworks:
                 SELECT
                 ?familyName ?familyNameLabel
                 ?givenName ?givenNameLabel
+                ?pseudonym ?pseudonymLabel
                 ?sexOrGender ?sexOrGenderLabel
                 ?dateOfBirth ?dateOfBirthLabel
                 ?placeOfBirth ?placeOfBirthLabel
@@ -70,26 +71,27 @@ class FindArtworks:
                 WHERE {
                   OPTIONAL { wd:person_id wdt:P734 ?familyName. }
                   OPTIONAL { wd:person_id wdt:P735 ?givenName. }
+                  OPTIONAL { wd:person_id wdt:P742 ?pseudonym. }
                   OPTIONAL { wd:person_id wdt:P21 ?sexOrGender. }
                   OPTIONAL {
                       wd:person_id wdt:P569 ?dateTimeOfBirth.
                       BIND (xsd:date(?dateTimeOfBirth) AS ?dateOfBirth)
                   }
-                  OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
-                  OPTIONAL {
-                    ?placeOfBirth wdt:P625 ?coordinatesBirth.
-                    BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
-                    BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
+                  OPTIONAL { 
+                      wd:person_id wdt:P19 ?placeOfBirth.
+                      ?placeOfBirth wdt:P625 ?coordinatesBirth.
+                      BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
+                      BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
                   }
                   OPTIONAL {
                       wd:person_id wdt:P570 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
                   }
-                  OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
-                  OPTIONAL {
-                    ?placeOfDeath wdt:P625 ?coordinatesDeath.
-                    BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
-                    BIND(geof:longitude(?coordinatesDeath) AS ?longitudeOfPlaceOfDeath)
+                  OPTIONAL { 
+                      wd:person_id wdt:P20 ?placeOfDeath.
+                      ?placeOfDeath wdt:P625 ?coordinatesDeath.
+                      BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
+                      BIND(geof:longitude(?coordinatesDeath) AS ?longitudeOfPlaceOfDeath)
                   }
                   OPTIONAL { wd:person_id wdt:P27 ?countryOfCitizenship. }
                   OPTIONAL { wd:person_id wdt:P551 ?residence. }
@@ -185,14 +187,13 @@ class FindArtworks:
 
         # Check if right arrow button can still be clicked
         while right_arrow_element.get_attribute('tabindex') is not None:
+            # Wait for page to load
             time.sleep(random_wait_time(min_wait=self.min_wait_time))
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
             # Click on right arrow button
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
-            # Wait for page to load
-            #time.sleep(random_wait_time(min_wait=self.min_wait_time))
 
         # List of all elements with links to artworks
         elements = right_arrow_element.find_elements('xpath', \
@@ -220,7 +221,7 @@ class FindArtworks:
         # Get the Wikipedia page
         page = wiki.page(title)
         # Get summary of the page (lead section of the Wikipedia article)
-        description = unquote(page.summary)
+        description = page.summary
 
         description = unquote(description)
 
