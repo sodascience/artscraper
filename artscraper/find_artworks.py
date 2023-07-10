@@ -187,13 +187,13 @@ class FindArtworks:
 
         # Check if right arrow button can still be clicked
         while right_arrow_element.get_attribute('tabindex') is not None:
-            # Wait for page to load
-            time.sleep(random_wait_time(min_wait=self.min_wait_time))
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
             # Click on right arrow button
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
+            # Wait for page to load
+            time.sleep(random_wait_time(min_wait=self.min_wait_time))
 
         # List of all elements with links to artworks
         elements = right_arrow_element.find_elements('xpath', \
