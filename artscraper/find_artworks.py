@@ -246,8 +246,12 @@ class FindArtworks:
         query = self.sparql_query.replace('person_id', artist_id)
 
         # Send query request
+<<<<<<< HEAD
         request = requests.get(url, params={'format': 'json', \
                             'query': ''.join(query)}, timeout=120)
+=======
+        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=120)
+>>>>>>> 9212b0c (add basic error handling and retrying)
 
         # Convert response to dictionary
         data = request.json()
