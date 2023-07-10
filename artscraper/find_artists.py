@@ -3,11 +3,14 @@ Get artist links from Google Arts & Culture webpage
 '''
 
 import time
+
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
+
 from artscraper.functions import random_wait_time
 
 def get_artist_links(webpage='https://artsandculture.google.com/category/artist',
-                     executable_path='geckodriver',
                      min_wait_time=5, output_file=None):
     '''
     Parameters
@@ -22,7 +25,7 @@ def get_artist_links(webpage='https://artsandculture.google.com/category/artist'
     '''
 
     # Launch Firefox browser
-    driver = webdriver.Firefox(executable_path=executable_path)
+    driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
 
     # Get Google Arts & Culture webpage listing all artists
     driver.get(webpage)

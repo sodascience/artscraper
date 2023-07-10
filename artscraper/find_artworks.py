@@ -14,9 +14,13 @@ from pathlib import Path
 
 import time
 import re
+from urllib.parse import unquote
+import json
 import requests
 
 from selenium import webdriver
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
 
 import wikipediaapi
 
@@ -28,13 +32,11 @@ class FindArtworks:
     given the link to their Google Arts & Culture webpage
     '''
 
-    def __init__(self, artist_link, executable_path='geckodriver',
+    def __init__(self, artist_link,
                  output_dir='./data', sparql_query= None, min_wait_time=5):
 
         # Link to artist's Google Arts & Culture webpage
         self.artist_link = artist_link
-        # Path to geckodriver
-        self.executable_path = executable_path
         # Directory to which the data is to be written
         # Create it if it doesn't exist
         Path(output_dir).mkdir(parents=True, exist_ok=True)
@@ -50,6 +52,7 @@ class FindArtworks:
                 SELECT
                 ?familyName ?familyNameLabel
                 ?givenName ?givenNameLabel
+                ?pseudonym ?pseudonymLabel
                 ?sexOrGender ?sexOrGenderLabel
                 ?dateOfBirth ?dateOfBirthLabel
                 ?placeOfBirth ?placeOfBirthLabel
@@ -64,35 +67,38 @@ class FindArtworks:
                 ?workLocation ?workLocationLabel
                 ?genre ?genreLabel
                 ?movement ?movementLabel
+                ?occupation ?occupationLabel
                 WHERE {
                   OPTIONAL { wd:person_id wdt:P734 ?familyName. }
                   OPTIONAL { wd:person_id wdt:P735 ?givenName. }
+                  OPTIONAL { wd:person_id wdt:P742 ?pseudonym. }
                   OPTIONAL { wd:person_id wdt:P21 ?sexOrGender. }
                   OPTIONAL {
                       wd:person_id wdt:P569 ?dateTimeOfBirth.
                       BIND (xsd:date(?dateTimeOfBirth) AS ?dateOfBirth)
                   }
-                  OPTIONAL { wd:person_id wdt:P19 ?placeOfBirth. }
-                  OPTIONAL {
-                    ?placeOfBirth wdt:P625 ?coordinatesBirth.
-                    BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
-                    BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
+                  OPTIONAL { 
+                      wd:person_id wdt:P19 ?placeOfBirth.
+                      ?placeOfBirth wdt:P625 ?coordinatesBirth.
+                      BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
+                      BIND(geof:longitude(?coordinatesBirth) AS ?longitudeOfPlaceOfBirth)
                   }
                   OPTIONAL {
                       wd:person_id wdt:P570 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
                   }
-                  OPTIONAL { wd:person_id wdt:P20 ?placeOfDeath. }
-                  OPTIONAL {
-                    ?placeOfDeath wdt:P625 ?coordinatesDeath.
-                    BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
-                    BIND(geof:longitude(?coordinatesDeath) AS ?longitudeOfPlaceOfDeath)
+                  OPTIONAL { 
+                      wd:person_id wdt:P20 ?placeOfDeath.
+                      ?placeOfDeath wdt:P625 ?coordinatesDeath.
+                      BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
+                      BIND(geof:longitude(?coordinatesDeath) AS ?longitudeOfPlaceOfDeath)
                   }
                   OPTIONAL { wd:person_id wdt:P27 ?countryOfCitizenship. }
                   OPTIONAL { wd:person_id wdt:P551 ?residence. }
                   OPTIONAL { wd:person_id wdt:P937 ?workLocation. }
                   OPTIONAL { wd:person_id wdt:P136 ?genre. }
                   OPTIONAL { wd:person_id wdt:P135 ?movement. }
+                  OPTIONAL { wd:person_id wdt:P106 ?occupation. }
                   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
                 }
                 '''
@@ -100,7 +106,7 @@ class FindArtworks:
             self.sparql_query = sparql_query
 
         # Open web browser
-        self.driver = webdriver.Firefox(executable_path=self.executable_path)
+        self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
 
 
     def __enter__(self):
@@ -145,7 +151,7 @@ class FindArtworks:
         # Filenames for artist's works, description, metadata
         artist_works_file = pathname_directory + '/' + 'works.txt'
         artist_description_file = pathname_directory + '/' + 'description.txt'
-        artist_metadata_file = pathname_directory + '/' + 'metadata.txt'
+        artist_metadata_file = pathname_directory + '/' + 'metadata.json'
 
         # Save artist's works, description, metadata
         with open(artist_works_file, 'w', encoding='utf-8') as file:
@@ -154,8 +160,7 @@ class FindArtworks:
         with open(artist_description_file, 'w', encoding='utf-8') as file:
             file.write(artist_description)
         with open(artist_metadata_file, 'w', encoding='utf-8') as file:
-            for key,value in artist_metadata.items():
-                file.write(f'{key} : {value}\n')
+            json.dump(artist_metadata, file, ensure_ascii=False)
 
 
     def get_artist_works(self):
@@ -182,13 +187,13 @@ class FindArtworks:
 
         # Check if right arrow button can still be clicked
         while right_arrow_element.get_attribute('tabindex') is not None:
+            # Wait for page to load
+            time.sleep(random_wait_time(min_wait=self.min_wait_time))
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
             # Click on right arrow button
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
-            # Wait for page to load
-            time.sleep(random_wait_time(min_wait=self.min_wait_time))
 
         # List of all elements with links to artworks
         elements = right_arrow_element.find_elements('xpath', \
@@ -218,6 +223,8 @@ class FindArtworks:
         # Get summary of the page (lead section of the Wikipedia article)
         description = page.summary
 
+        description = unquote(description)
+
         return description
 
     def get_artist_metadata(self):
@@ -239,7 +246,8 @@ class FindArtworks:
         query = self.sparql_query.replace('person_id', artist_id)
 
         # Send query request
-        request = requests.get(url, params= {'format': 'json', 'query': ''.join(query)}, timeout=30)
+        request = requests.get(url, params={'format': 'json', \
+                            'query': ''.join(query)}, timeout=120)
 
         # Convert response to dictionary
         data = request.json()
@@ -292,6 +300,8 @@ class FindArtworks:
         # Get title of artist's Wikipedia article
         title = wikipedia_link.rsplit('/')[-1]
 
+        title = unquote(title)
+
         return title
 
     def get_artist_wikidata_id(self):
@@ -340,6 +350,7 @@ class FindArtworks:
         if query_property+'Label' in data['results']['bindings'][0].keys():
             for element in data['results']['bindings']:
                 output_property = element[query_property+'Label']['value']
+                output_property = unquote(output_property)
                 # Avoid duplicates
                 if output_property not in output_property_list:
                     output_property_list.append(output_property)

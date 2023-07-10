@@ -5,11 +5,14 @@ import time
 from pathlib import Path
 from time import sleep
 from urllib.parse import urlparse
+from urllib.parse import unquote
 
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from webdriver_manager.firefox import GeckoDriverManager
 
 from artscraper.base import BaseArtScraper
 from artscraper.functions import random_wait_time
@@ -29,10 +32,10 @@ class GoogleArtScraper(BaseArtScraper):
         is randomly drawn from a polynomial distribution.
     """
 
-    def __init__(self, output_dir=None, skip_existing=True, min_wait=5,
-                 geckodriver_path="geckodriver"):
+    def __init__(self, output_dir=None, skip_existing=True, min_wait=5):
         super().__init__(output_dir, skip_existing, min_wait=min_wait)
-        self.driver = webdriver.Firefox(executable_path=geckodriver_path)
+
+        self.driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
         self.last_request = time.time() - 100
 
     def __exit__(self, _exc_type, _exc_val, _exc_tb):
@@ -46,7 +49,7 @@ class GoogleArtScraper(BaseArtScraper):
         if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
-                    and Path(self.paint_dir, "painting.png").is_file()):
+                    and Path(self.paint_dir, "artwork.png").is_file()):
                 return False
             self.paint_dir.mkdir(exist_ok=True, parents=True)
 
@@ -57,6 +60,13 @@ class GoogleArtScraper(BaseArtScraper):
     @property
     def paint_dir(self):
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
+
+        # Prevent problems with character encoding/decoding
+        paint_id = unquote(paint_id)
+        # Prevent problems with too-long file/directory names
+        if len(paint_id)>=256:
+            paint_id = paint_id[0:255]
+
         return Path(self.output_dir, paint_id)
 
     def wait(self, min_wait, max_wait=None, update=True):
@@ -97,7 +107,7 @@ class GoogleArtScraper(BaseArtScraper):
         if elem.get_attribute("id").startswith("metadata-"):
             return ''
         inner_HTML = elem.get_attribute("innerHTML")
-        return BeautifulSoup(inner_HTML, features="html.parser").text
+        return unquote(BeautifulSoup(inner_HTML, features="html.parser").text)
 
     def _get_metadata(self):
         if self.output_dir is not None and self.meta_fp.is_file():
@@ -114,9 +124,11 @@ class GoogleArtScraper(BaseArtScraper):
         paragraph_HTML = soup.find_all("li")
         metadata = {}
         metadata["main_text"] = self.get_main_text()
+        metadata["main_text"] = unquote(metadata["main_text"])
         for par in paragraph_HTML:
             name = par.find("span", text=True).contents[0].lower()[:-1]
             metadata[name] = par.text[len(name) + 2:]
+            metadata[name] = unquote(metadata[name])
         metadata["id"] = paint_id
         return metadata
 
@@ -156,6 +168,20 @@ class GoogleArtScraper(BaseArtScraper):
             return
         with open(img_fp, "wb") as f:
             f.write(self.get_image())
+
+    def save_artwork_information(self, link):
+        """
+        Given an artwork link, saves the image and the associated metadata.
+
+        Parameters
+        ----------
+        link: str
+            Artwork URL.
+
+        """
+        self.load_link(link)
+        self.save_metadata()
+        self.save_image()
 
     def close(self):
         self.driver.close()
