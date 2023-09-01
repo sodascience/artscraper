@@ -184,4 +184,4 @@ class GoogleArtScraper(BaseArtScraper):
         self.save_image()
 
     def close(self):
-        self.driver.close()
+        self.driver.quit()
