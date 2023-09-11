@@ -7,13 +7,11 @@ get_artist_metadata: Get metadata of the artist, from Wikidata
 
 '''
 
-# Allow __init__ function to have more than 5 arguments
-#pylint: disable-msg=too-many-arguments
-
 from pathlib import Path
 
 import time
 import re
+from urllib.parse import urlparse
 from urllib.parse import unquote
 import json
 import requests
@@ -30,7 +28,10 @@ class FindArtworks:
     '''
     Class for finding artworks and metadata for an artist,
     given the link to their Google Arts & Culture webpage
-    '''
+    unquote   '''
+
+    # Allow __init__ function to have more than 5 arguments
+    # pylint: disable-msg=too-many-arguments
 
     def __init__(self, artist_link,
                  output_dir='./data', sparql_query= None, min_wait_time=5):
@@ -77,7 +78,7 @@ class FindArtworks:
                       wd:person_id wdt:P569 ?dateTimeOfBirth.
                       BIND (xsd:date(?dateTimeOfBirth) AS ?dateOfBirth)
                   }
-                  OPTIONAL { 
+                  OPTIONAL {
                       wd:person_id wdt:P19 ?placeOfBirth.
                       ?placeOfBirth wdt:P625 ?coordinatesBirth.
                       BIND(geof:latitude(?coordinatesBirth) AS ?latitudeOfPlaceOfBirth)
@@ -87,7 +88,7 @@ class FindArtworks:
                       wd:person_id wdt:P570 ?dateTimeOfDeath.
                       BIND (xsd:date(?dateTimeOfDeath) AS ?dateOfDeath)
                   }
-                  OPTIONAL { 
+                  OPTIONAL {
                       wd:person_id wdt:P20 ?placeOfDeath.
                       ?placeOfDeath wdt:P625 ?coordinatesDeath.
                       BIND(geof:latitude(?coordinatesDeath) AS ?latitudeOfPlaceOfDeath)
@@ -142,26 +143,53 @@ class FindArtworks:
         '''
 
         artist_works, artist_description, artist_metadata = self.get_artist_information()
-        artist_name = self.get_wikipedia_article_title()
-
+        artist_name = self.get_artist_name()
         # Create directory for artist
         pathname_directory = self.output_dir + '/' + artist_name
         Path(pathname_directory).mkdir(parents=True, exist_ok=True)
-
         # Filenames for artist's works, description, metadata
         artist_works_file = pathname_directory + '/' + 'works.txt'
         artist_description_file = pathname_directory + '/' + 'description.txt'
         artist_metadata_file = pathname_directory + '/' + 'metadata.json'
-
         # Save artist's works, description, metadata
         with open(artist_works_file, 'w', encoding='utf-8') as file:
             for link in artist_works:
                 file.write(f'{link}\n')
         with open(artist_description_file, 'w', encoding='utf-8') as file:
-            file.write(artist_description)
+            if artist_description is not None:
+                file.write(artist_description)
         with open(artist_metadata_file, 'w', encoding='utf-8') as file:
-            json.dump(artist_metadata, file, ensure_ascii=False)
+            if artist_metadata is not None:
+                json.dump(artist_metadata, file, ensure_ascii=False)
 
+
+    def get_artist_name(self):
+
+        '''
+        Return artist's name, with parts thereof being separated by underscores
+        '''
+
+        # Artist link
+        artist_link = self.artist_link
+
+        # Split the link by forward slashes
+        parts = artist_link.split('/')
+        # Extract the artist's name (separated by dashes)
+        artist_name_string = parts[4]
+        artist_name_string = unquote(artist_name_string)
+
+        # Split the artist's name into component parts
+        artist_name_parts = artist_name_string.split('-')
+        # Capitalize each component
+        artist_name_capitalized_parts = []
+        for part in artist_name_parts:
+            part = part.capitalize()
+            artist_name_capitalized_parts.append(part)
+
+        # Artist's name, separated by underscores
+        artist_name = ('_').join(artist_name_capitalized_parts)
+
+        return artist_name
 
     def get_artist_works(self):
 
@@ -216,8 +244,20 @@ class FindArtworks:
 
         # Get title of artist's Wikipedia article
         title = self.get_wikipedia_article_title()
-        # Choose the English Wikipedia
-        wiki = wikipediaapi.Wikipedia('en')
+
+        # Return None if no Wikipedia article exists
+        if title is None:
+            return None
+
+        # Get link to Wikipedia article
+        wikipedia_article_link = self.get_wikipedia_article_link()
+        # Parse the URL
+        parsed_url = urlparse(wikipedia_article_link)
+        # Find the language of the Wikipedia article
+        language_code = parsed_url.netloc.split('.')[0]
+
+        # Choose the Wikipedia corresponding to the language code
+        wiki = wikipediaapi.Wikipedia(language_code)
         # Get the Wikipedia page
         page = wiki.page(title)
         # Get summary of the page (lead section of the Wikipedia article)
@@ -238,6 +278,8 @@ class FindArtworks:
 
         # Get Wikidata ID of artist
         artist_id = self.get_artist_wikidata_id()
+        if artist_id is None:
+            return None
 
         # Wikidata database to query
         url = 'https://query.wikidata.org/sparql'
@@ -277,9 +319,14 @@ class FindArtworks:
 
         # Get Google Arts & Culture webpage for the artist
         self.driver.get(self.artist_link)
+        # Allow bare-except
+        # pylint: disable=W0702
+        try:
+            # Locate the element containing the link to the artist's Wikipedia article
+            element = self.driver.find_element('xpath','//*[contains(@href,"wikipedia")]')
+        except:
+            return None
 
-        # Locate the element containing the link to the artist's Wikipedia article
-        element = self.driver.find_element('xpath','//*[contains(@href,"wikipedia")]')
         # Extract the link to the Wikipedia article
         wikipedia_link = element.get_attribute('href')
 
@@ -297,12 +344,13 @@ class FindArtworks:
         # Get the link to the artist's Wikipedia article
         wikipedia_link = self.get_wikipedia_article_link()
 
-        # Get title of artist's Wikipedia article
-        title = wikipedia_link.rsplit('/')[-1]
+        if wikipedia_link is not None:
+            # Get title of artist's Wikipedia article
+            title = wikipedia_link.rsplit('/')[-1]
+            title = unquote(title)
+            return title
 
-        title = unquote(title)
-
-        return title
+        return None
 
     def get_artist_wikidata_id(self):
 
@@ -312,24 +360,25 @@ class FindArtworks:
         wikidata_id: Wikidata ID of the artist
         '''
 
-        # Get Google Arts & Culture webpage for the artist
-        self.driver.get(self.artist_link)
-
-        # Locate the element containing the link to the artist's Wikipedia article
-        element = self.driver.find_element('xpath','//*[contains(@href,"wikipedia")]')
-        # Extract the link to the Wikipedia article
-        wikipedia_link = element.get_attribute('href')
+        # Get the link to the Wikipedia article
+        wikipedia_link = self.get_wikipedia_article_link()
 
         # Get Wikipedia page for the artist
-        self.driver.get(wikipedia_link)
-        # Find element containing text about Wikidata
-        element = self.driver.find_element('xpath','//*[contains(text(),"Wikidata item")]')
-        # Find parent element of this element
-        parent_element = element.find_element('xpath', '..')
+        if wikipedia_link is not None:
+            self.driver.get(wikipedia_link)
+        else:
+            return None
+
+        # Find element containing the link to the Wikidata page
+        element = self.driver.find_element('xpath','//*[contains(@href,"www.wikidata.org")]')
         # Extract the link to the Wikidata page
-        wikidata_link = parent_element.get_attribute('href')
+        wikidata_link = element.get_attribute('href')
+        # Specify pattern of Wikidata ID
+        pattern = r'Q\d+'
+        # Search for pattern in the Wikidata link
+        match = re.search(pattern, wikidata_link)
         # Find the Wikidata ID of the artist
-        wikidata_id = wikidata_link.rsplit('/')[-1]
+        wikidata_id = match.group(0)
 
         return wikidata_id
 
