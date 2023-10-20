@@ -45,29 +45,30 @@ class GoogleArtScraper(BaseArtScraper):
         if link == self.link:
             return False
         self.link = link
-
         if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
                     and Path(self.paint_dir, "artwork.png").is_file()):
                 return False
             self.paint_dir.mkdir(exist_ok=True, parents=True)
-
         self.wait(self.min_wait)
         self.driver.get(link)
         return True
 
     @property
     def paint_dir(self):
+
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
 
         # Prevent problems with character encoding/decoding
         paint_id = unquote(paint_id)
-        # Prevent problems with too-long file/directory names
-        if len(paint_id)>=256:
-            paint_id = paint_id[0:255]
 
-        return Path(self.output_dir, paint_id)
+        # Prevent problems with too-long file/directory names
+        path_str = str(Path(self.output_dir, paint_id))
+        if len(path_str)>=256:
+            path = path_str[0:255]
+
+        return Path(path)
 
     def wait(self, min_wait, max_wait=None, update=True):
         """Wait until we are allowed to perform our next action.
