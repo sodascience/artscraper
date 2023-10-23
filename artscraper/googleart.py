@@ -48,7 +48,8 @@ class GoogleArtScraper(BaseArtScraper):
         if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
-                    and Path(self.paint_dir, "artwork.png").is_file()):
+                    and Path(self.paint_dir, "artwork.png").is_file()
+                    and Path(self.paint_dir, "artwork.png").stat().st_size>0):
                 return False
             self.paint_dir.mkdir(exist_ok=True, parents=True)
         self.wait(self.min_wait)
@@ -138,14 +139,19 @@ class GoogleArtScraper(BaseArtScraper):
         self.wait(self.min_wait)
         elem = self.driver.find_element(
             "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
         webdriver.ActionChains(
             self.driver).move_to_element(elem).click(elem).perform()
+
         self.wait(self.min_wait * 2, update=False)
         elem = self.driver.find_element(
             "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
         img = elem.screenshot_as_png
+
         self.wait(self.min_wait)
         self.driver.find_element("xpath", "/html/body").send_keys(Keys.ESCAPE)
+
         return img
 
     def save_image(self, img_fp=None, link=None):
@@ -165,10 +171,12 @@ class GoogleArtScraper(BaseArtScraper):
 
         img_fp = self._convert_img_fp(img_fp, suffix=".png")
 
-        if self.skip_existing and img_fp.is_file():
+        if self.skip_existing and img_fp.is_file() and img_fp.stat().st_size!=0:
             return
+
         with open(img_fp, "wb") as f:
             f.write(self.get_image())
+
 
     def save_artwork_information(self, link):
         """
