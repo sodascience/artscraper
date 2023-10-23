@@ -68,7 +68,8 @@ class GoogleArtScraper(BaseArtScraper):
         path_str = str(Path(self.output_dir, paint_id))
         if len(path_str)>=256:
             path = path_str[0:255]
-
+        else:
+            path = path_str
         return Path(path)
 
     def wait(self, min_wait, max_wait=None, update=True):
