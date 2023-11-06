@@ -75,9 +75,10 @@ class GoogleArtScraper(BaseArtScraper):
 
         # Set maximum length for the part of the directory name derived from the
         # Google Arts & Culture url for the artwork
-        max_byte_length = 100
+        max_byte_length = 240
+        hash_length = 40
         if byte_length >= max_byte_length:
-            truncated_byte_string = paint_id_encoded[:max_byte_length]
+            truncated_byte_string = paint_id_encoded[:max_byte_length-hash_length]
             # Decode back to string, handling possible incomplete character at the end
             while True:
                 try:
