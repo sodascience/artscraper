@@ -7,6 +7,8 @@ from time import sleep
 from urllib.parse import urlparse
 from urllib.parse import unquote
 
+import hashlib
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -63,14 +65,32 @@ class GoogleArtScraper(BaseArtScraper):
 
         # Prevent problems with character encoding/decoding
         paint_id = unquote(paint_id)
+        # Byte string
+        paint_id_encoded = paint_id.encode('utf-8')
+        # Length of directory name in bytes
+        byte_length = len(paint_id_encoded)
 
-        # Prevent problems with too-long file/directory names
-        path_str = str(Path(self.output_dir, paint_id))
-        if len(path_str)>=256:
-            path = path_str[0:255]
-        else:
-            path = path_str
-        return Path(path)
+        # Prevent problems with too-long directory names
+        # 255 bytes is the maximum length of a directory on Windows
+
+        # Set maximum length for the part of the directory name derived from the
+        # Google Arts & Culture url for the artwork
+        max_byte_length = 100
+        if byte_length >= max_byte_length:
+            truncated_byte_string = paint_id_encoded[:max_byte_length]
+            # Decode back to string, handling possible incomplete character at the end
+            while True:
+                try:
+                    truncated_directory_name = truncated_byte_string.decode('utf-8')
+                    break
+                except UnicodeDecodeError:
+                    # Remove the last byte and try again
+                    truncated_byte_string = truncated_byte_string[:-1]
+            # Create hopefully-unique directory name that doesn't exceed
+            # maximum allowed directory length
+            paint_id = truncated_directory_name + '_' + hashlib.sha1(paint_id_encoded).hexdigest()
+
+        return Path(self.output_dir, paint_id)
 
     def wait(self, min_wait, max_wait=None, update=True):
         """Wait until we are allowed to perform our next action.
