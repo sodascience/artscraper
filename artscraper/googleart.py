@@ -7,6 +7,8 @@ from time import sleep
 from urllib.parse import urlparse
 from urllib.parse import unquote
 
+import hashlib
+
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -45,27 +47,49 @@ class GoogleArtScraper(BaseArtScraper):
         if link == self.link:
             return False
         self.link = link
-
         if self.output_dir is not None:
             if (self.paint_dir.is_dir() and self.skip_existing
                     and Path(self.paint_dir, "metadata.json").is_file()
-                    and Path(self.paint_dir, "artwork.png").is_file()):
+                    and Path(self.paint_dir, "artwork.png").is_file()
+                    and Path(self.paint_dir, "artwork.png").stat().st_size>0):
                 return False
             self.paint_dir.mkdir(exist_ok=True, parents=True)
-
         self.wait(self.min_wait)
         self.driver.get(link)
         return True
 
     @property
     def paint_dir(self):
+
         paint_id = "_".join(urlparse(self.link).path.split("/")[-2:])
 
         # Prevent problems with character encoding/decoding
         paint_id = unquote(paint_id)
-        # Prevent problems with too-long file/directory names
-        if len(paint_id)>=256:
-            paint_id = paint_id[0:255]
+        # Byte string
+        paint_id_encoded = paint_id.encode('utf-8')
+        # Length of directory name in bytes
+        byte_length = len(paint_id_encoded)
+
+        # Prevent problems with too-long directory names
+        # 255 bytes is the maximum length of a directory on Windows
+
+        # Set maximum length for the part of the directory name derived from the
+        # Google Arts & Culture url for the artwork
+        max_byte_length = 240
+        hash_length = 40
+        if byte_length >= max_byte_length:
+            truncated_byte_string = paint_id_encoded[:max_byte_length-hash_length]
+            # Decode back to string, handling possible incomplete character at the end
+            while True:
+                try:
+                    truncated_directory_name = truncated_byte_string.decode('utf-8')
+                    break
+                except UnicodeDecodeError:
+                    # Remove the last byte and try again
+                    truncated_byte_string = truncated_byte_string[:-1]
+            # Create hopefully-unique directory name that doesn't exceed
+            # maximum allowed directory length
+            paint_id = truncated_directory_name + '_' + hashlib.sha1(paint_id_encoded).hexdigest()
 
         return Path(self.output_dir, paint_id)
 
@@ -137,14 +161,19 @@ class GoogleArtScraper(BaseArtScraper):
         self.wait(self.min_wait)
         elem = self.driver.find_element(
             "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
         webdriver.ActionChains(
             self.driver).move_to_element(elem).click(elem).perform()
+
         self.wait(self.min_wait * 2, update=False)
         elem = self.driver.find_element(
             "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
         img = elem.screenshot_as_png
+
         self.wait(self.min_wait)
         self.driver.find_element("xpath", "/html/body").send_keys(Keys.ESCAPE)
+
         return img
 
     def save_image(self, img_fp=None, link=None):
@@ -164,10 +193,12 @@ class GoogleArtScraper(BaseArtScraper):
 
         img_fp = self._convert_img_fp(img_fp, suffix=".png")
 
-        if self.skip_existing and img_fp.is_file():
+        if self.skip_existing and img_fp.is_file() and img_fp.stat().st_size!=0:
             return
+
         with open(img_fp, "wb") as f:
             f.write(self.get_image())
+
 
     def save_artwork_information(self, link):
         """
