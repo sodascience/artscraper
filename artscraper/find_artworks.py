@@ -213,12 +213,12 @@ class FindArtworks:
         # Find elements with tag name 'h3'
         items_elements = parent_element.find_elements('tag name', 'h3')
         for element in items_elements:
-            if 'items' in element.text: 
-                match = re.search(r'\d+', element.text)        
+            if 'items' in element.text:
+                match = re.search(r'\d+', element.text)
                 if match:
                     total_num_artworks = int(match.group())
                     break
-            
+
         # Initialize number of artworks
         num_artworks = 0
 
@@ -234,7 +234,7 @@ class FindArtworks:
                     './/*[contains(@data-gaaction,"rightArrow")]')
                 # Click on right arrow button
                 self.driver.execute_script("arguments[0].click();", right_arrow_element)
-                
+
                 # List of all elements with links to artworks
                 elements = right_arrow_element.find_elements('xpath', \
                     '//*[contains(@href,"/asset/")]')
@@ -243,7 +243,7 @@ class FindArtworks:
                 list_links = [element.get_attribute('href') for element in elements]
 
                 num_artworks = len(list_links)
-                
+
                 # Check if total number of artworks is reached
                 if num_artworks < total_num_artworks:
                     # Wait for page to load
