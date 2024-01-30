@@ -221,11 +221,27 @@ class FindArtworks:
 
         # Initialize number of artworks
         num_artworks = 0
+        # Initialize count of number of iterations for which the number of artworks remains the same
+        count = 0
 
-        while num_artworks < total_num_artworks:
+        while True:
+
+            # Save current number of artworks
+            old_num_artworks = num_artworks
+
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
+
+            # List of all elements with links to artworks
+            elements = right_arrow_element.find_elements('xpath', \
+                '//*[contains(@href,"/asset/")]')
+
+            # Get the links from the XPath elements
+            list_links = [element.get_attribute('href') for element in elements]
+
+            # Calculate new number of artworks
+            num_artworks = len(list_links)
 
             # Check if right arrow button can still be clicked
             if right_arrow_element.get_attribute('tabindex') is not None:
@@ -242,13 +258,28 @@ class FindArtworks:
                 # Get the links from the XPath elements
                 list_links = [element.get_attribute('href') for element in elements]
 
+                # Calculate new number of artworks
                 num_artworks = len(list_links)
 
                 # Check if total number of artworks is reached
-                if num_artworks < total_num_artworks:
-                    # Wait for page to load
-                    time.sleep(random_wait_time(min_wait=self.min_wait_time))
-                    continue
+                if total_num_artworks:
+                    if num_artworks < total_num_artworks:
+                        # Wait for page to load
+                        time.sleep(random_wait_time(min_wait=self.min_wait_time))
+                        continue
+                    # Break out of the while loop if total_num_artworks is reached
+                    break
+
+            if num_artworks > old_num_artworks:
+                # Count number of iterations for which the number of artworks remains the same
+                count = 0
+            else:
+                count = count+1
+
+            # Try thrice before deciding that there are no more artworks to be scraped
+            if count > 3:
+                break
+
 
         return list_links
 
