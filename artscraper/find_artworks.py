@@ -209,26 +209,83 @@ class FindArtworks:
         # Find the parent element corresponding to the text heading
         parent_element = element.find_element('xpath', '../..')
 
-        # Find right arrow button
-        right_arrow_element = parent_element.find_element('xpath', \
-            './/*[contains(@data-gaaction,"rightArrow")]')
+        # Initialize total number of artworks
+        # (set to number of artworks by artist with the most artworks)
+        total_num_artworks = 200000
 
-        # Check if right arrow button can still be clicked
-        while right_arrow_element.get_attribute('tabindex') is not None:
+        # Find number of artists
+        # Find elements with tag name 'h3'
+        items_elements = parent_element.find_elements('tag name', 'h3')
+        for element in items_elements:
+            if 'items' in element.text:
+                match = re.search(r'\d+', element.text)
+                if match:
+                    total_num_artworks = int(match.group())
+                    break
+
+        # Find right arrow element
+        def _find_right_arrow_element(parent_element):
+
+            right_arrow_element = parent_element.find_element('xpath', \
+                './/*[contains(@data-gaaction,"rightArrow")]')
+
+            return right_arrow_element
+
+        # Get list of artwork links
+        def _get_list_links(parent_element):
+
+            # Find right arrow button
+            right_arrow_element = parent_element.find_element('xpath', \
+                './/*[contains(@data-gaaction,"rightArrow")]')
+
+            # List of all elements with links to artworks
+            elements = right_arrow_element.find_elements('xpath', \
+                '//*[contains(@href,"/asset/")]')
+
+            # Get the links from the XPath elements
+            list_links = [element.get_attribute('href') for element in elements]
+
+            return list_links
+
+        # Click on right arrow
+        def _click_on_right_arrow(parent_element):
+
             # Find right arrow button
             right_arrow_element = parent_element.find_element('xpath', \
                 './/*[contains(@data-gaaction,"rightArrow")]')
             # Click on right arrow button
             self.driver.execute_script("arguments[0].click();", right_arrow_element)
-            # Wait for page to load
-            time.sleep(random_wait_time(min_wait=self.min_wait_time))
 
-        # List of all elements with links to artworks
-        elements = right_arrow_element.find_elements('xpath', \
-                '//*[contains(@href,"/asset/")]')
+        list_links = _get_list_links(parent_element)
 
-        # Get the links from the XPath elements
-        list_links = [element.get_attribute('href') for element in elements]
+        # Initialize count of number of iterations for which the number of artworks remains the same
+        n_tries = 0
+
+        while (len(list_links) < total_num_artworks and n_tries < 3):
+
+            # Save current number of artworks
+            old_num_artworks = len(list_links)
+
+            # Find right arrow element
+            right_arrow_element =  _find_right_arrow_element(parent_element)
+
+            # Check if right arrow button can still be clicked
+            if right_arrow_element.get_attribute('tabindex') is not None:
+
+                # Click on right arrow
+                _click_on_right_arrow(parent_element)
+
+                # Wait for page to load
+                time.sleep(random_wait_time(min_wait=self.min_wait_time))
+
+                # Obtain new list of artworks
+                list_links = _get_list_links(parent_element)
+
+            if len(list_links) == old_num_artworks:
+                # Count number of iterations for which the number of artworks remains the same
+                n_tries = n_tries + 1
+            else:
+                n_tries = 0
 
         return list_links
 
