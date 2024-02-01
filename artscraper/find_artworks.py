@@ -261,8 +261,7 @@ class FindArtworks:
         # Initialize count of number of iterations for which the number of artworks remains the same
         n_tries = 0
 
-        while (len(list_links) < total_num_artworks and
-               not (total_num_artworks == 0 and n_tries > 3)):
+        while (len(list_links) < total_num_artworks and n_tries < 3):
 
             # Save current number of artworks
             old_num_artworks = len(list_links)
