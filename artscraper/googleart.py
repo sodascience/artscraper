@@ -159,15 +159,29 @@ class GoogleArtScraper(BaseArtScraper):
     def get_image(self):
         """Get a binary PNG image in memory."""
         self.wait(self.min_wait)
-        elem = self.driver.find_element(
-            "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
+        def _find_clickable_element_to_enlarge_image():
+            try:
+                # Without ArtRemix/PoemPostcard
+                elem = self.driver.find_element(
+                    "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+            except NoSuchElementException:
+                # With ArtRemix/PoemPostcard
+                elem = self.driver.find_element(
+                "xpath", "/html/body/div[3]/div[3]/div/div/div[3]/div[3]/div[1]")
+
+            return elem
+
+        # Find element to click on to enlarge image
+        elem = _find_clickable_element_to_enlarge_image()
 
         webdriver.ActionChains(
             self.driver).move_to_element(elem).click(elem).perform()
 
         self.wait(self.min_wait * 2, update=False)
-        elem = self.driver.find_element(
-            "xpath", "/html/body/div[3]/div[3]/div/div/div[2]/div[3]")
+
+        # Find element to click on to enlarge image, again
+        elem = _find_clickable_element_to_enlarge_image()
 
         img = elem.screenshot_as_png
 
@@ -210,9 +224,11 @@ class GoogleArtScraper(BaseArtScraper):
             Artwork URL.
 
         """
+
         self.load_link(link)
         self.save_metadata()
         self.save_image()
+
 
     def close(self):
         self.driver.quit()
