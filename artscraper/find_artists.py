@@ -25,40 +25,37 @@ def get_artist_links(webpage='https://artsandculture.google.com/category/artist'
     '''
 
     # Launch Firefox browser
-    driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+    with webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install())) as driver:
+        # Get Google Arts & Culture webpage listing all artists
+        driver.get(webpage)
 
-    # Get Google Arts & Culture webpage listing all artists
-    driver.get(webpage)
+        # Get scroll height after first time page load
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        while True:
+            # Scroll down to bottom
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # Wait to load page
+            time.sleep(random_wait_time(min_wait=min_wait_time))
+            # Calculate new scroll height and compare with last scroll height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
 
-    # Get scroll height after first time page load
-    last_height = driver.execute_script("return document.body.scrollHeight")
-    while True:
-        # Scroll down to bottom
-        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        # Wait to load page
-        time.sleep(random_wait_time(min_wait=min_wait_time))
-        # Calculate new scroll height and compare with last scroll height
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        if new_height == last_height:
-            break
-        last_height = new_height
+        # Find xpaths containing artist links
+        elements = driver.find_elements('xpath', '//*[contains(@href,"categoryId=artist")]')
 
-    # Find xpaths containing artist links
-    elements = driver.find_elements('xpath', '//*[contains(@href,"categoryId=artist")]')
+        # List to store artist links
+        list_links = []
+        # Go through each xpath containing an artist link
+        for element in elements:
+            # Extract link to webpage
+            link = element.get_attribute('href')
+            # Remove trailing text
+            link = link.replace('?categoryId=artist', '')
+            # Append to list
+            list_links.append(link)
 
-    # List to store artist links
-    list_links = []
-    # Go through each xpath containing an artist link
-    for element in elements:
-        # Extract link to webpage
-        link = element.get_attribute('href')
-        # Remove trailing text
-        link = link.replace('?categoryId=artist', '')
-        # Append to list
-        list_links.append(link)
-
-    # Close driver
-    driver.close()
 
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as file:
