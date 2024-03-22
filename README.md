@@ -93,8 +93,8 @@ The final structure of the results will be
 - data
   - artist_links.txt (All artists, with one url per line) 
   - Artist_1
-    - description.txt (Description of artist, from wikimedia)
-    - metadata.json (Metadata of arist, from wikimedia)
+    - description.txt (Description of artist, from wikidata)
+    - metadata.json (Metadata of arist, from wikidata)
     - works.txt (All artworks, with one url per line)
     - works 
       - work1
