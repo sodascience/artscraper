@@ -74,7 +74,7 @@ An example of fetching data is shown below and in the [notebook](examples/exampl
 ```python
 from artscraper import GoogleArtScraper
 
-art_url = "https://artsandculture.google.com/asset/helena-hunter-fairytales/dwFMypq0ZSiq6w"
+art_url = "https://artsandculture.google.com/asset/anxiety-edvard-munch/JgE_nwHHS7wTPw"
 
 with GoogleArtScraper() as scraper:
     scraper.load_link(art_url)
